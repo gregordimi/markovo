@@ -74,6 +74,11 @@ def create_prism_from_quad(
         j = (i + 1) % 4
         bm.faces.new([verts_btm[i], verts_btm[j], verts_top[j], verts_top[i]])
 
+    uv_layer = bm.loops.layers.uv.verify()
+    for face in bm.faces:
+        for loop in face.loops:
+            loop[uv_layer].uv = (loop.vert.co.x, loop.vert.co.y)
+
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(mesh)
     bm.free()
@@ -96,7 +101,7 @@ def create_extruded_polygon(
     col: bpy.types.Collection,
     parent: bpy.types.Object = None,
 ) -> bpy.types.Object:
-    """Creates an extruded 3D slab from an arbitrary 2D polygon in cm."""
+    """Creates an extruded 3D slab from an arbitrary 2D polygon in cm with real-world planar UVs."""
     mesh = bpy.data.meshes.new(name)
     bm = bmesh.new()
 
@@ -109,6 +114,11 @@ def create_extruded_polygon(
     for i in range(n):
         j = (i + 1) % n
         bm.faces.new([verts_btm[i], verts_btm[j], verts_top[j], verts_top[i]])
+
+    uv_layer = bm.loops.layers.uv.verify()
+    for face in bm.faces:
+        for loop in face.loops:
+            loop[uv_layer].uv = (loop.vert.co.x, loop.vert.co.y)
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(mesh)

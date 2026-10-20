@@ -32,7 +32,17 @@ def make_pbr_material(
 
 ---
 
-### 2.2 `create_clay_tiles_material(name="Clay_Tiles_Mat")`
+### 2.2 `load_polyhaven_tiles_material(name="Clay_Tiles_Mat")`
+Loads scanned 4K PBR tile materials directly from the project's [`assets/`](file:///Users/gdimitrov/projects/markovo/assets) directory (e.g. Poly Haven `brown_floor_tiles_4k.blend`).
+
+- Automatically links Diffuse, Roughness, Normal (OpenGL), and Displacement 4K texture maps.
+- Configures real-world scale (1.0 meter = 1.0 UV unit, matched to `geometry.py` planar UV coordinates).
+- Sets warm terracotta viewport preview color (`(0.58, 0.32, 0.18, 1.0)`).
+- **Graceful Fallback**: If the asset file is missing, automatically falls back to procedural `create_clay_tiles_material()`.
+
+---
+
+### 2.3 `create_clay_tiles_material(name="Clay_Tiles_Mat")`
 Generates artisanal Mediterranean terracotta/cotto floor tiles precisely matched to the user's reference photo. Features square tiles (~31x31 cm) with soft cloudy artisanal mottling and dark grey-brown cement grout lines.
 
 #### Shader Node Graph:
@@ -179,3 +189,18 @@ brick.inputs["Mortar"].default_value = (0.25, 0.25, 0.26, 1.0)  # Charcoal grout
    ```python
    f3.add_room("Bathroom", [(0, 290), (230, 290), (230, 450), (0, 450)], mat_key="marble")
    ```
+
+---
+
+## 4. Downloading External Assets from Poly Haven
+
+A standalone CLI script is provided in [`scripts/download_polyhaven.py`](file:///Users/gdimitrov/projects/markovo/scripts/download_polyhaven.py) to download textures and `.blend` files directly from Poly Haven's public API into the [`assets/`](file:///Users/gdimitrov/projects/markovo/assets) folder:
+
+```bash
+# Download by asset slug:
+/usr/bin/python3 scripts/download_polyhaven.py brown_floor_tiles --resolution 4k
+
+# Or download by full Poly Haven URL:
+/usr/bin/python3 scripts/download_polyhaven.py https://polyhaven.com/a/brown_floor_tiles
+```
+

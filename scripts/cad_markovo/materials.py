@@ -11,6 +11,7 @@ Includes:
 - Glazing, interior wood doors, slabs, shafts, and text materials
 """
 
+from pathlib import Path
 import bpy
 
 
@@ -57,6 +58,71 @@ def make_pbr_material(
             mat.surface_render_method = "BLENDED"
 
     return mat
+
+
+def load_polyhaven_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Material:
+    """
+    Loads Poly Haven's 'brown_floor_tiles' scanned PBR material from the assets/ folder.
+    Configures viewport diffuse preview color and ensures valid texture paths.
+    Falls back gracefully to procedural `create_clay_tiles_material()` if the asset is missing.
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+    candidate_paths = [
+        repo_root / "assets" / "brown_floor_tiles_4k.blend" / "brown_floor_tiles_4k.blend",
+        repo_root / "assets" / "brown_floor_tiles_4k.blend",
+        repo_root / "assets" / "brown_floor_tiles.blend",
+    ]
+
+    blend_file = None
+    for p in candidate_paths:
+        if p.is_file():
+            blend_file = p
+            break
+
+    if not blend_file:
+        print("[Materials] Poly Haven blend file not found in assets/. Falling back to procedural cotto tiles.")
+        return create_clay_tiles_material(name=name)
+
+    try:
+        with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
+            if "brown_floor_tiles" in data_from.materials:
+                data_to.materials = ["brown_floor_tiles"]
+            elif data_from.materials:
+                data_to.materials = [data_from.materials[0]]
+
+        loaded_mat = bpy.data.materials.get("brown_floor_tiles")
+        if not loaded_mat:
+            print("[Materials] 'brown_floor_tiles' material not found in library. Falling back to procedural.")
+            return create_clay_tiles_material(name=name)
+
+        # Set rich warm terracotta viewport diffuse color
+        loaded_mat.diffuse_color = (0.58, 0.32, 0.18, 1.0)
+        loaded_mat.name = name
+
+        # Mark as asset so it appears in Blender's Asset Browser
+        try:
+            if not getattr(loaded_mat, "asset_data", None):
+                loaded_mat.asset_mark()
+        except Exception:
+            pass
+
+        # Verify and fix texture image paths if needed
+        textures_dir = blend_file.parent / "textures"
+        if loaded_mat.node_tree:
+            for node in loaded_mat.node_tree.nodes:
+                if node.type == "TEX_IMAGE" and node.image:
+                    img_path = Path(bpy.path.abspath(node.image.filepath))
+                    if not img_path.exists():
+                        local_match = textures_dir / Path(node.image.filepath).name
+                        if local_match.exists():
+                            node.image.filepath = str(local_match)
+                            node.image.reload()
+
+        return loaded_mat
+
+    except Exception as e:
+        print(f"[Materials] Warning: Failed to load Poly Haven material ({e}). Falling back to procedural.")
+        return create_clay_tiles_material(name=name)
 
 
 def create_clay_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Material:
@@ -320,7 +386,7 @@ def create_cement_mosaic_material(name: str = "Cement_Mosaic_Stairs_Mat") -> bpy
 
 def create_materials() -> dict:
     """Builds and returns the complete material dictionary for Markovo 3D floor plans."""
-    return {
+    mats = {
         # Walls & Enclosures
         "wall": make_pbr_material("Wall_Mat", (0.29, 0.29, 0.29, 1.0), roughness=0.7),
         "wall_cap": make_pbr_material("Wall_Cap_Mat", (0.12, 0.12, 0.12, 1.0), roughness=0.6),
@@ -328,8 +394,8 @@ def create_materials() -> dict:
         # Terrace Coping (Architectural stone cap resting on top of terrace parapet walls)
         "terrace_coping": make_pbr_material("Terrace_Coping_Mat", (0.86, 0.85, 0.82, 1.0), roughness=0.5),
 
-        # Floor Finishes (Matched to user reference photos)
-        "clay_tiles": create_clay_tiles_material("Clay_Tiles_Mat"),
+        # Floor Finishes (Matched to user reference photos & Poly Haven scanned PBR)
+        "clay_tiles": load_polyhaven_tiles_material("brown_floor_tiles"),
         "parquet_light_wood": create_parquet_light_wood_material("Parquet_Coniferous_Light_Mat"),
         "cement_mosaic": create_cement_mosaic_material("Cement_Mosaic_Stairs_Mat"),
 
@@ -375,3 +441,13 @@ def create_materials() -> dict:
         "text": make_pbr_material("Text_Mat", (0.08, 0.08, 0.08, 1.0), roughness=0.4),
         "dim": make_pbr_material("Dim_Mat", (0.0, 0.33, 0.65, 1.0), roughness=0.4),
     }
+
+    # Mark materials as assets so they appear in Blender's Asset Browser under Current File
+    for mat in mats.values():
+        if mat and hasattr(mat, "asset_mark") and not getattr(mat, "asset_data", None):
+            try:
+                mat.asset_mark()
+            except Exception:
+                pass
+
+    return mats
