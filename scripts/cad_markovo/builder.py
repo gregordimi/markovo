@@ -389,6 +389,8 @@ class FloorPlanBuilder:
                 pvc_mat=self.mats["pvc_white"],
                 wood_mat=self.mats["door_wood"],
                 door_frame_mat=self.mats["door_frame"],
+                handle_mat=self.mats.get("door_handle"),
+                glass_mat=self.mats.get("glass"),
                 col=self.col,
                 parent=self.root,
             )

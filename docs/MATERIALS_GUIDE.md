@@ -33,47 +33,53 @@ def make_pbr_material(
 ---
 
 ### 2.2 `create_clay_tiles_material(name="Clay_Tiles_Mat")`
-Generates authentic Mediterranean / Cotto terracotta floor tiles for the Kitchen and Living Room.
+Generates artisanal Mediterranean terracotta/cotto floor tiles precisely matched to the user's reference photo. Features square tiles (~31x31 cm) with soft cloudy artisanal mottling and dark grey-brown cement grout lines.
 
 #### Shader Node Graph:
 ```
-[TexCoord (Object)] ──► [Mapping (Scale 3.0)] ──► [Brick Texture] ──► [Principled BSDF (Base Color)] ──► [Material Output]
+                                         ┌──► [Brick Texture (Square Tiles)] ──┐
+[TexCoord (Object)] ──► [Mapping (3.2)] ─┤                                     ├──► [Mix (Overlay 0.24)] ──► [Principled BSDF]
+                                         └──► [Noise Texture (Cloudy Mottling)]┘
 ```
 
 #### Key Parameters & How to Tune Them:
 | Parameter | Location in Code | Default Value | Description / Tuning Guidance |
 | :--- | :--- | :--- | :--- |
-| **Tile Scale** | `mapping.inputs["Scale"]` | `(3.0, 3.0, 3.0)` | Controls tile size. `3.0` corresponds to $\sim 33 \times 33\text{ cm}$ tiles. Increase to `4.0` for smaller $25\text{ cm}$ tiles, or decrease to `2.0` for large $50\text{ cm}$ tiles. |
-| **Color 1** | `brick.inputs["Color1"]` | `(0.74, 0.38, 0.22, 1.0)` | Primary baked terracotta orange-brown. |
-| **Color 2** | `brick.inputs["Color2"]` | `(0.66, 0.31, 0.16, 1.0)` | Darker baked clay variation between adjacent tiles. |
-| **Mortar Color** | `brick.inputs["Mortar"]` | `(0.80, 0.78, 0.74, 1.0)` | Light cement/lime grout line color. |
-| **Mortar Size** | `brick.inputs["Mortar Size"]` | `0.015` | Grout joint thickness ($\approx 1.5\text{ cm}$). |
-| **Tile Ratio** | `brick.inputs["Brick Width"]` | `1.0` | Set equal to `Row Height` (`1.0`) for square floor tiles. |
-| **Roughness** | `bsdf.inputs["Roughness"]` | `0.68` | Matte, unglazed terracotta sheen. |
+| **Tile Scale** | `mapping.inputs["Scale"]` | `(3.2, 3.2, 3.2)` | Controls tile size ($\sim 31 \times 31\text{ cm}$). Increase to `4.0` for smaller tiles or decrease to `2.5` for larger tiles. |
+| **Color 1** | `brick.inputs["Color1"]` | `(0.66, 0.36, 0.20, 1.0)` | Primary warm terracotta tone. |
+| **Color 2** | `brick.inputs["Color2"]` | `(0.54, 0.28, 0.15, 1.0)` | Darker baked clay variation between adjacent tiles. |
+| **Mortar Color** | `brick.inputs["Mortar"]` | `(0.42, 0.38, 0.35, 1.0)` | Dark grey-brown cement grout line. |
+| **Mortar Size** | `brick.inputs["Mortar Size"]` | `0.012` | Clean $\approx 4\text{ mm}$ grout joint. |
+| **Mottling Scale** | `noise.inputs["Scale"]` | `14.0` | Cloudy organic surface mottling across tiles. |
+| **Mottling Factor**| `mix.inputs["Factor"]` | `0.24` | Blend strength of cloudy mottling. |
+| **Roughness** | `bsdf.inputs["Roughness"]` | `0.65` | Natural matte fired cotto finish. |
 
 ---
 
 ### 2.3 `create_parquet_light_wood_material(name="Parquet_Coniferous_Light_Mat")`
-Generates parallel parquet light coniferous wood flooring for the Bedroom and Attic. Features pale Scandinavian pine and fir tones, parallel board joints, and subtle procedural wood grain.
+Generates continuous parallel coniferous pine floorboards ("дюшеме") matched to the user's reference photo. Features narrow continuous parallel planks (~11 cm wide), warm amber/honey pine wood tones, longitudinal grain, and scattered natural darker knots.
 
 #### Shader Node Graph:
 ```
-                                        ┌──► [Brick Texture (Boards)] ─┐
-[TexCoord (Object)] ──► [Mapping (1.0)] ┤                              ├──► [Mix (Multiply 0.18)] ──► [Principled BSDF]
-                                        └──► [Wave Texture (Grain)]  ──┘
+                                        ┌──► [Brick Texture (Parallel Planks)] ─┐
+                                        │                                       ├──► [Mix (Grain)] ──┐
+[TexCoord (Object)] ──► [Mapping (1.0)] ┼──► [Wave Texture (Ring Grain)] ───────┘                    ├──► [Mix (Knots)] ──► [Principled BSDF]
+                                        │                                                            │
+                                        └──► [Voronoi (Knots)] ──► [ColorRamp (Knot Rings)] ─────────┘
 ```
 
 #### Key Parameters & How to Tune Them:
 | Parameter | Location in Code | Default Value | Description / Tuning Guidance |
 | :--- | :--- | :--- | :--- |
-| **Plank Length** | `brick.inputs["Brick Width"]` | `0.85` | Length of individual parquet boards ($85\text{ cm}$). |
-| **Plank Width** | `brick.inputs["Row Height"]` | `0.12` | Width of parquet strips ($12\text{ cm}$). |
-| **Color 1** | `brick.inputs["Color1"]` | `(0.85, 0.74, 0.57, 1.0)` | Pale golden Scandinavian pine tone. |
-| **Color 2** | `brick.inputs["Color2"]` | `(0.78, 0.65, 0.47, 1.0)` | Slightly warmer honey fir tone. |
-| **Mortar / Joint** | `brick.inputs["Mortar"]` | `0.006` | Fine micro-bevel shadow line between planks. |
-| **Grain Frequency** | `wave.inputs["Scale"]` | `18.0` | Coniferous annual ring grain density. |
-| **Grain Mix** | `mix.inputs["Factor"]` | `0.18` | Blend ratio between plank colors and wood grain. |
-| **Surface Finish** | `bsdf.inputs["Roughness"]` | `0.38` | Semi-matte satin parquet lacquer finish. |
+| **Plank Length** | `brick.inputs["Brick Width"]` | `4.5` | Continuous longitudinal boards ($4.5\text{ m}$). |
+| **Plank Width** | `brick.inputs["Row Height"]` | `0.11` | Width of parallel floorboards ($11\text{ cm}$). |
+| **Color 1** | `brick.inputs["Color1"]` | `(0.82, 0.58, 0.26, 1.0)` | Warm golden amber pine tone. |
+| **Color 2** | `brick.inputs["Color2"]` | `(0.74, 0.48, 0.20, 1.0)` | Deeper honey pine tone. |
+| **Mortar / Seam** | `brick.inputs["Mortar"]` | `(0.32, 0.18, 0.08, 1.0)` | Dark seam / V-groove shadow between boards. |
+| **Knot Frequency** | `voronoi.inputs["Scale"]` | `5.5` | Density of scattered knots on boards. |
+| **Knot Color** | `ramp.elements[0]` | `(0.28, 0.14, 0.05, 1.0)` | Dark core of natural pine knots. |
+| **Grain Frequency** | `wave.inputs["Scale"]` | `24.0` | Directional coniferous ring grain density. |
+| **Surface Finish** | `bsdf.inputs["Roughness"]` | `0.34` | Varnished wood floor sheen. |
 
 ---
 
@@ -98,7 +104,16 @@ Generates traditional Mediterranean / Balkan cement mosaic ("мозайка") / 
 
 ---
 
-### 2.5 `pvc_white` (White uPVC Joinery)
+### 2.5 `door_wood` & 8-Panel Door Geometry
+Interior doors are modeled after the reference photo with:
+- **8 Recessed/Raised Molded Panels**: 2 columns $\times$ 4 rows of panels with profiled border bevels.
+- **Door Frame**: Stiles ($10\text{ cm}$), top rail ($12\text{ cm}$), bottom kick rail ($18\text{ cm}$), and 3 intermediate cross rails.
+- **Material**: Rich warm chestnut/honey pine wood (`(0.46, 0.28, 0.14, 1.0)`, `roughness = 0.38`).
+- **Hardware**: Brushed silver lever handle and vertical escutcheon plate at $z = 1.00\text{ m}$ (`Door_Handle_Mat`, `metallic = 0.92`, `roughness = 0.22`).
+
+---
+
+### 2.6 `pvc_white` (White uPVC Joinery)
 Used for all external window frames, vertical mullions, and exterior balcony doors.
 
 ```python
