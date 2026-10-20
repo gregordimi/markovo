@@ -125,9 +125,11 @@ def main():
     mats = materials.create_materials()
     print(f"      - Loaded {len(mats)} materials:")
     print("        * White uPVC (External Doors & Windows)")
-    print("        * Clay Terracotta Tiles (Kitchen & Living Room)")
-    print("        * Parallel Parquet Light Coniferous Wood (Bedroom & Attic)")
-    print("        * Cement Mosaic 'мозайка' (Stairs & Landings)")
+    print("        * Poly Haven Scanned Tiles (Kitchen & Living Room)")
+    print("        * Poly Haven Worn Wood Floor (Bedroom & Attic)")
+    print("        * Poly Haven Concrete Floor 01 (Main Stairs & Landings)")
+    print("        * Poly Haven White Maple Veneer (Internal Stairs)")
+    print("        * Satin Aluminum Railing (Main Stairs)")
     print("        * Terrace Parapets (Matching Wall Material) + Stone Coping")
 
     # 3. Build Floor 3 (Main Level)
@@ -138,11 +140,9 @@ def main():
     print(f"[4/5] Constructing Floor 4 (Attic Level, stacked={STACK_FLOORS})...")
     f4 = floor4.build_floor_4(mats, stack=STACK_FLOORS)
 
-    # 5. Lighting, Cameras & Interactive Viewport Setup
-    print("[5/5] Setting up architectural studio lighting, cameras, and viewport...")
+    # 5. Lighting & Cameras
+    print("[5/5] Setting up architectural studio lighting and cameras...")
     scene.setup_lighting_and_cameras(stack=STACK_FLOORS)
-    scene.setup_viewport_shading(shading_mode="MATERIAL")
-    scene.register_project_asset_library()
 
     print("\n" + "-" * 70)
     print("  3D Floor Plans successfully constructed!")

@@ -27,6 +27,7 @@ from .geometry import (
     create_window_3d,
     create_door_3d,
     create_stairs_3d,
+    create_curved_stairs_with_railing_3d,
     create_terrace_parapet_and_coping,
     create_text_label_3d,
 )
@@ -178,14 +179,20 @@ class FloorPlanBuilder:
         num_treads: int = 10,
         direction: str = "right",
         label: str = "STAIRS",
+        mat_key: str = "cement_mosaic",
+        has_curve: bool = False,
+        has_railing: bool = False,
     ):
-        """Adds stairs finished with Cement Mosaic ("мозайка")."""
+        """Adds stairs with designated finish and optional curved winders and railing."""
         self.stairs.append({
             "x": float(x), "y": float(y),
             "w": float(w), "h": float(h),
             "num_treads": num_treads,
             "direction": direction,
             "label": label,
+            "mat_key": mat_key,
+            "has_curve": has_curve,
+            "has_railing": has_railing,
         })
 
     def add_label(
@@ -452,20 +459,37 @@ class FloorPlanBuilder:
                 )
 
     def _build_stairs(self):
-        """Builds all stairs with Cement Mosaic finish."""
+        """Builds all stairs with designated finish and optional curves/railings."""
         for s in self.stairs:
-            create_stairs_3d(
-                name_prefix=self.name,
-                x=s["x"], y=s["y"],
-                w=s["w"], h=s["h"],
-                num_treads=s["num_treads"],
-                direction=s["direction"],
-                label=s["label"],
-                mosaic_mat=self.mats["cement_mosaic"],
-                text_mat=self.mats["text"],
-                col=self.col,
-                parent=self.root,
-            )
+            stair_mat = self.mats.get(s.get("mat_key", "cement_mosaic"), self.mats.get("cement_mosaic"))
+            if s.get("has_curve"):
+                create_curved_stairs_with_railing_3d(
+                    name_prefix=self.name,
+                    x=s["x"], y=s["y"],
+                    w=s["w"], h=s["h"],
+                    num_treads=s["num_treads"],
+                    direction=s["direction"],
+                    label=s["label"],
+                    stair_mat=stair_mat,
+                    railing_mat=self.mats.get("aluminum"),
+                    text_mat=self.mats["text"],
+                    has_railing=s.get("has_railing", False),
+                    col=self.col,
+                    parent=self.root,
+                )
+            else:
+                create_stairs_3d(
+                    name_prefix=self.name,
+                    x=s["x"], y=s["y"],
+                    w=s["w"], h=s["h"],
+                    num_treads=s["num_treads"],
+                    direction=s["direction"],
+                    label=s["label"],
+                    stair_mat=stair_mat,
+                    text_mat=self.mats["text"],
+                    col=self.col,
+                    parent=self.root,
+                )
 
     def _build_labels(self):
         """Builds 3D text labels."""

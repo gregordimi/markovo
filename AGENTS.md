@@ -51,3 +51,8 @@ This file contains operating instructions for AI coding assistants working in th
 4. **Testing Before Completion**:
    - Always run the headless script to verify no exceptions.
    - If visual changes are made, run `--render` and inspect output images in [`renders/`](file:///Users/gdimitrov/projects/markovo/renders) using `view_file`.
+5. **Explain Questions First**:
+   - When the user asks a question (e.g. "why is it like this?"), explain the reason and ask for permission before modifying code or configurations.
+6. **Preserve Fast Default Shading & Preferences**:
+   - Never force `shading.type = 'MATERIAL'` in scripts or edit Blender preferences. Keep default `SOLID` mode for fast ($< 1.5\text{ s}$) startup. Viewport PBR textures are viewed on demand by pressing `Z` $\rightarrow$ `Material Preview`.
+

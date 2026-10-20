@@ -64,11 +64,11 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
         mat_key="parquet_light_wood",
     )
 
-    # Stairwell Landing: Cement Mosaic
+    # Stairwell Landing: Architectural Concrete (Poly Haven concrete_floor_01)
     f3.add_room(
         name="Stair_Landing",
         poly_2d=[(0, 120), (377, 120), (377, 290), (0, 290)],
-        mat_key="cement_mosaic",
+        mat_key="concrete_floor",
     )
 
     # --------------------------------------------------------------------------
@@ -113,10 +113,8 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     # --------------------------------------------------------------------------
     # 6. Windows & Glazed Assemblies (White uPVC Frames & Mullions)
     # --------------------------------------------------------------------------
-    # Kitchen North glazed assembly
-    f3.add_window(56, 1040, 294, 1040, label="238 (3x79.3)")
-    f3.add_door(135, 1040, 79.3, 270, 360, 0, is_exterior=True)
-    f3.add_door(294, 1040, 79.3, 180, 270, 180, is_exterior=True)
+    # Kitchen North window (standard 3-segment window: 1 static next to wall + 2 opening)
+    f3.add_window(56, 1040, 294, 1040, label="238 (1 static + 2 open)")
 
     # Balcony divider & Living Room North assembly
     f3.add_window(350, 935, 350, 1025, label="127")
@@ -141,10 +139,28 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     f3.add_door(377, 465, 80, 270, 360, 270, thickness=12, is_exterior=False)
 
     # --------------------------------------------------------------------------
-    # 8. Stairs (Cement Mosaic Finish)
+    # 8. Stairs
     # --------------------------------------------------------------------------
-    f3.add_stairs(377, 500, 260, 75, num_treads=9, direction="right", label="INTERNAL STAIRS")
-    f3.add_stairs(20, 120, 330, 85, num_treads=10, direction="left", label="STAIRS")
+    # Internal Stairs: White Maple Veneer
+    f3.add_stairs(
+        377, 500, 260, 75,
+        num_treads=9,
+        direction="right",
+        label="INTERNAL STAIRS",
+        mat_key="internal_stairs",
+        has_curve=False,
+        has_railing=False,
+    )
+    # Main Stairs: Architectural Concrete with double curved winders (bottom and top) + round aluminum railing
+    f3.add_stairs(
+        20, 120, 330, 85,
+        num_treads=16,
+        direction="right",
+        label="MAIN STAIRS",
+        mat_key="main_stairs",
+        has_curve=True,
+        has_railing=True,
+    )
 
     # --------------------------------------------------------------------------
     # 9. Architectural Room Labels

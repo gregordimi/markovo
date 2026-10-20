@@ -14,7 +14,7 @@ Provides:
 import math
 import bpy
 import bmesh
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from .config import (
     CM,
     WALL_HEIGHT,
@@ -194,7 +194,67 @@ def create_window_3d(
             parent,
         )
 
-    # 3. Double-glazed architectural glass pane
+    # 3. Operable sash frames & handles for opening segments (segment 0 next to wall is static, segments 1 & 2 opening)
+    if num_panels >= 2:
+        for p in range(num_panels):
+            if p == 0 and num_panels == 3:
+                continue  # static / fixed pane next to wall
+            d_start = (p / num_panels) * (length - frame_t) + frame_t
+            d_end = ((p + 1) / num_panels) * (length - frame_t)
+            sash_t = 3.5
+            sx1, sy1 = x1 + dx * d_start, y1 + dy * d_start
+            sx2, sy2 = x1 + dx * d_end, y1 + dy * d_end
+
+            create_prism_from_quad(
+                f"{name_prefix}_WinSashBtm_{idx}_{p}",
+                wall_quad(sx1, sy1, sx2, sy2, thickness + 1.5),
+                z_sill + frame_t * CM,
+                z_sill + (frame_t + sash_t) * CM,
+                pvc_mat,
+                col,
+                parent,
+            )
+            create_prism_from_quad(
+                f"{name_prefix}_WinSashTop_{idx}_{p}",
+                wall_quad(sx1, sy1, sx2, sy2, thickness + 1.5),
+                z_top - (frame_t + sash_t) * CM,
+                z_top - frame_t * CM,
+                pvc_mat,
+                col,
+                parent,
+            )
+            create_prism_from_quad(
+                f"{name_prefix}_WinSashL_{idx}_{p}",
+                wall_quad(sx1, sy1, sx1 + dx * sash_t, sy1 + dy * sash_t, thickness + 1.5),
+                z_sill + (frame_t + sash_t) * CM,
+                z_top - (frame_t + sash_t) * CM,
+                pvc_mat,
+                col,
+                parent,
+            )
+            create_prism_from_quad(
+                f"{name_prefix}_WinSashR_{idx}_{p}",
+                wall_quad(sx2 - dx * sash_t, sy2 - dy * sash_t, sx2, sy2, thickness + 1.5),
+                z_sill + (frame_t + sash_t) * CM,
+                z_top - (frame_t + sash_t) * CM,
+                pvc_mat,
+                col,
+                parent,
+            )
+            hx = sx2 - dx * (sash_t * 0.5)
+            hy = sy2 - dy * (sash_t * 0.5)
+            hz = (z_sill + z_top) * 0.5
+            create_prism_from_quad(
+                f"{name_prefix}_WinHandle_{idx}_{p}",
+                wall_quad(hx - dx * 1.5, hy - dy * 1.5, hx + dx * 1.5, hy + dy * 1.5, thickness + 4.5),
+                hz - 0.05,
+                hz + 0.05,
+                pvc_mat,
+                col,
+                parent,
+            )
+
+    # 4. Double-glazed architectural glass pane
     create_prism_from_quad(
         f"{name_prefix}_WinGlass_{idx}",
         wall_quad(x1, y1, x2, y2, 2.5),
@@ -564,6 +624,61 @@ def create_terrace_parapet_and_coping(
     )
 
 
+def create_round_cylinder_3d(
+    name: str,
+    p1: tuple,
+    p2: tuple,
+    radius_cm: float,
+    mat: bpy.types.Material,
+    col: bpy.types.Collection,
+    parent: bpy.types.Object = None,
+    segments: int = 16,
+) -> bpy.types.Object:
+    """Creates a smooth round cylindrical aluminum tube/post between two (x_cm, y_cm, z_m) points."""
+    v1 = Vector((p1[0] * CM, p1[1] * CM, p1[2]))
+    v2 = Vector((p2[0] * CM, p2[1] * CM, p2[2]))
+    diff = v2 - v1
+    length = diff.length
+    if length < 1e-5:
+        return None
+
+    mid = (v1 + v2) * 0.5
+    direction = diff.normalized()
+    up = Vector((0.0, 0.0, 1.0))
+
+    rot = up.rotation_difference(direction)
+    mat_transform = Matrix.Translation(mid) @ rot.to_matrix().to_4x4()
+
+    mesh = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+
+    bmesh.ops.create_cone(
+        bm,
+        cap_ends=True,
+        cap_tris=False,
+        segments=segments,
+        radius1=radius_cm * CM,
+        radius2=radius_cm * CM,
+        depth=length,
+        matrix=mat_transform,
+    )
+
+    for f in bm.faces:
+        f.smooth = True
+
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(mesh)
+    bm.free()
+
+    obj = bpy.data.objects.new(name, mesh)
+    if mat:
+        obj.data.materials.append(mat)
+    if parent:
+        obj.parent = parent
+    link_to_collection(obj, col)
+    return obj
+
+
 def create_stairs_3d(
     name_prefix: str,
     x: float,
@@ -573,13 +688,13 @@ def create_stairs_3d(
     num_treads: int,
     direction: str,
     label: str,
-    mosaic_mat: bpy.types.Material,
+    stair_mat: bpy.types.Material,
     text_mat: bpy.types.Material,
     col: bpy.types.Collection,
     parent: bpy.types.Object = None,
 ):
     """
-    Constructs 3D stairs finished with Cement Mosaic ("мозайка") on all treads and risers.
+    Constructs 3D stairs with custom tread/riser material.
     """
     step_w = w / float(num_treads)
     step_h = WALL_HEIGHT / float(num_treads)
@@ -596,7 +711,7 @@ def create_stairs_3d(
             quad,
             z_btm,
             z_top,
-            mosaic_mat,
+            stair_mat,
             col,
             parent,
         )
@@ -607,6 +722,207 @@ def create_stairs_3d(
             label,
             x + w / 2.0,
             y + h / 2.0,
+            z=WALL_HEIGHT * 0.55,
+            size=14.0,
+            mat=text_mat,
+            col=col,
+            parent=parent,
+        )
+
+
+def create_curved_stairs_with_railing_3d(
+    name_prefix: str,
+    x: float,
+    y: float,
+    w: float,
+    h: float,
+    num_treads: int,
+    direction: str,
+    label: str,
+    stair_mat: bpy.types.Material,
+    railing_mat: bpy.types.Material,
+    text_mat: bpy.types.Material,
+    has_railing: bool = True,
+    col: bpy.types.Collection = None,
+    parent: bpy.types.Object = None,
+):
+    """
+    Constructs 3D main stairs ascending from the West landing (next to the terrace door)
+    to the East landing (in front of the attic door) with symmetrical curves at BOTH ends:
+    1. Bottom curved / round winder steps 1..5 in corner [15, 100], y in [120, 205],
+       fanning through 90 degrees around pivot (100, 205) starting at landing level (z=0.175 m)
+       up to z=0.875 m.
+    2. Middle straight steps 6..11 running East along x from 100 to 265, y in [120, 205],
+       ascending from z=1.05 m up to z=1.925 m.
+    3. Top curved / round winder steps 12..16 in corner [265, 350], y in [120, 205],
+       fanning through 90 degrees around pivot (265, 205) ascending from z=2.10 m
+       up to z=2.80 m (stepping North directly onto the Floor 4 landing).
+    4. Sleek round aluminum railing (central newel posts, intermediate balusters,
+       continuous sloping top handrail, round safety rails).
+    """
+    num_curved_btm = 5
+    num_straight = 6
+    num_curved_top = 5
+    total_steps = num_curved_btm + num_straight + num_curved_top  # 16 steps
+    step_h = WALL_HEIGHT / float(total_steps)  # 0.175 m per rise
+
+    pivot_btm_x = 100.0
+    pivot_top_x = 265.0
+    pivot_y = y + h  # 205.0 cm
+    radius = 85.0
+
+    # 1. Bottom Curved Section: Steps 1..5 starting from the West landing next to terrace door
+    # Curves through 90 deg around pivot (100, 205) from theta = pi (180 deg) to 1.5*pi (270 deg)
+    for k in range(num_curved_btm):
+        z_top = (k + 1) * step_h
+        z_btm = max(0.0, z_top - step_h - 0.08)
+
+        ang_start = math.pi + k * (0.5 * math.pi / float(num_curved_btm))
+        ang_end = math.pi + (k + 1) * (0.5 * math.pi / float(num_curved_btm))
+
+        arc_points = []
+        subdivisions = 4
+        for s in range(subdivisions + 1):
+            t = s / float(subdivisions)
+            ang = ang_start + t * (ang_end - ang_start)
+            arc_points.append((pivot_btm_x + radius * math.cos(ang), pivot_y + radius * math.sin(ang)))
+
+        poly_2d = [(pivot_btm_x, pivot_y)] + arc_points
+        create_extruded_polygon(
+            f"{name_prefix}_Btm_Curved_Step_{k + 1}",
+            poly_2d,
+            z_btm,
+            z_top,
+            stair_mat,
+            col,
+            parent,
+        )
+
+    # 2. Middle Straight Section: Steps 6..11 running East along x from 100 to 265, y in [120, 205]
+    straight_w = (pivot_top_x - pivot_btm_x) / float(num_straight)  # 165 / 6 = 27.5 cm
+    for i in range(num_straight):
+        x_left = pivot_btm_x + i * straight_w
+        x_right = pivot_btm_x + (i + 1) * straight_w
+        z_top = (num_curved_btm + i + 1) * step_h
+        z_btm = max(0.0, z_top - step_h - 0.08)
+
+        quad = [(x_left, y), (x_right, y), (x_right, y + h), (x_left, y + h)]
+        create_prism_from_quad(
+            f"{name_prefix}_Straight_Step_{num_curved_btm + i + 1}",
+            quad,
+            z_btm,
+            z_top,
+            stair_mat,
+            col,
+            parent,
+        )
+
+    # 3. Top Curved Section: Steps 12..16 curving into the East landing in front of the attic door
+    # Curves through 90 deg around pivot (265, 205) from theta = 1.5*pi (270 deg) to 2.0*pi (360 deg)
+    for m in range(num_curved_top):
+        z_top = (num_curved_btm + num_straight + m + 1) * step_h
+        z_btm = max(0.0, z_top - step_h - 0.08)
+
+        ang_start = 1.5 * math.pi + m * (0.5 * math.pi / float(num_curved_top))
+        ang_end = 1.5 * math.pi + (m + 1) * (0.5 * math.pi / float(num_curved_top))
+
+        arc_points = []
+        subdivisions = 4
+        for s in range(subdivisions + 1):
+            t = s / float(subdivisions)
+            ang = ang_start + t * (ang_end - ang_start)
+            arc_points.append((pivot_top_x + radius * math.cos(ang), pivot_y + radius * math.sin(ang)))
+
+        poly_2d = [(pivot_top_x, pivot_y)] + arc_points
+        create_extruded_polygon(
+            f"{name_prefix}_Top_Curved_Step_{num_curved_btm + num_straight + m + 1}",
+            poly_2d,
+            z_btm,
+            z_top,
+            stair_mat,
+            col,
+            parent,
+        )
+
+    # 4. Round Aluminum Railing along open inner flight (y = 203.5 cm, from x = 100 to 265)
+    if has_railing and railing_mat:
+        railing_y = y + h - 1.5  # 203.5 cm
+        handrail_height = 0.90   # 0.90 m above tread line
+
+        z_btm_rail = num_curved_btm * step_h
+        z_top_rail = (num_curved_btm + num_straight) * step_h
+
+        # Central / Corner Round Newel Post at bottom turn (100.0, 203.5)
+        create_round_cylinder_3d(
+            f"{name_prefix}_Alu_Btm_Corner_Newel_Post",
+            (pivot_btm_x, railing_y, 0.0),
+            (pivot_btm_x, railing_y, z_btm_rail + handrail_height),
+            radius_cm=2.5,  # 5.0 cm diameter
+            mat=railing_mat,
+            col=col,
+            parent=parent,
+        )
+
+        # Central / Corner Round Newel Post at top turn (265.0, 203.5)
+        create_round_cylinder_3d(
+            f"{name_prefix}_Alu_Top_Corner_Newel_Post",
+            (pivot_top_x, railing_y, z_top_rail),
+            (pivot_top_x, railing_y, WALL_HEIGHT + handrail_height),
+            radius_cm=2.5,  # 5.0 cm diameter
+            mat=railing_mat,
+            col=col,
+            parent=parent,
+        )
+
+        # Intermediate Round Baluster Posts along straight run (every 2 steps)
+        post_indices = [1, 3]
+        for p_idx in post_indices:
+            px = pivot_btm_x + (p_idx + 0.5) * straight_w
+            pz_base = (num_curved_btm + p_idx + 1) * step_h
+            pz_top = pz_base + handrail_height
+            create_round_cylinder_3d(
+                f"{name_prefix}_Alu_Post_{p_idx+1}",
+                (px, railing_y, pz_base),
+                (px, railing_y, pz_top),
+                radius_cm=1.6,  # 3.2 cm diameter
+                mat=railing_mat,
+                col=col,
+                parent=parent,
+            )
+
+        # Round Sloping Top Handrail (4.5 cm diameter pipe)
+        p_start = (pivot_btm_x, railing_y, z_btm_rail + handrail_height)
+        p_end = (pivot_top_x, railing_y, z_top_rail + handrail_height)
+        create_round_cylinder_3d(
+            f"{name_prefix}_Alu_Handrail_Top",
+            p_start,
+            p_end,
+            radius_cm=2.25,  # 4.5 cm diameter
+            mat=railing_mat,
+            col=col,
+            parent=parent,
+        )
+
+        # Intermediate Round Safety Rails (2 parallel round tubes, 2.0 cm diameter)
+        for r_offset in (0.30, 0.60):
+            p1 = (pivot_btm_x, railing_y, z_btm_rail + r_offset)
+            p2 = (pivot_top_x, railing_y, z_top_rail + r_offset)
+            create_round_cylinder_3d(
+                f"{name_prefix}_Alu_MidRail_{int(r_offset*100)}",
+                p1,
+                p2,
+                radius_cm=1.0,  # 2.0 cm diameter
+                mat=railing_mat,
+                col=col,
+                parent=parent,
+            )
+
+    if label:
+        create_text_label_3d(
+            name_prefix,
+            label,
+            182.5,
+            y + h * 0.5,
             z=WALL_HEIGHT * 0.55,
             size=14.0,
             mat=text_mat,

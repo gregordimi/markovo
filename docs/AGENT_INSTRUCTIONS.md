@@ -259,3 +259,6 @@ When working inside Blender's 3D Viewport:
    - Exterior windows and exterior doors $\rightarrow$ `pvc_white`
    - Interior doors $\rightarrow$ `door_wood` leaf and `door_frame` head
 6. **Always Verify Renders**: Before reporting completion on visual or material modifications, execute a headless render and inspect the output images using `view_file` to verify lighting, colors, and UV alignment.
+7. **Explain Questions First Before Modifying Code**: When the user asks an informational question (e.g. "why is it like this?"), explain the technical reason and ask for user confirmation before implementing code or configuration changes. Never proactively alter codebase files, viewport states, or preferences on a question.
+8. **Preserve Fast Default Viewport & User Preferences**: Never force `shading.type = 'MATERIAL'` or mutate Blender user preferences (`userpref.blend`) in scripts. Blender defaults to `SOLID` mode to keep startup fast ($< 1.5\text{ s}$). Forcing Material Preview on startup causes Eevee Next shader compilation of 4K textures, freezing Blender for over a minute.
+

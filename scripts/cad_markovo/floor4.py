@@ -53,11 +53,11 @@ def build_floor_4(
         mat_key="parquet_light_wood",
     )
 
-    # Stairwell Landing: Cement Mosaic
+    # Stairwell Landing: Architectural Concrete (Poly Haven concrete_floor_01)
     f4.add_room(
         name="Stair_Landing",
         poly_2d=[(0, 120), (360, 120), (360, 210), (0, 210)],
-        mat_key="cement_mosaic",
+        mat_key="concrete_floor",
     )
 
     # Roof Void / Unusable Area on the West side
@@ -114,13 +114,7 @@ def build_floor_4(
     f4.add_door(340, 230, 85, 90, 180, 180, thickness=10, is_exterior=False)
 
     # --------------------------------------------------------------------------
-    # 6. Stairs (Cement Mosaic Finish)
-    # --------------------------------------------------------------------------
-    f4.add_stairs(360, 500, 270, 70, num_treads=9, direction="right", label="INTERNAL STAIRS")
-    f4.add_stairs(20, 120, 310, 85, num_treads=9, direction="left", label="MAIN STAIRS")
-
-    # --------------------------------------------------------------------------
-    # 7. Architectural Room Labels
+    # 6. Architectural Room Labels
     # --------------------------------------------------------------------------
     f4.add_label("ATTIC FLOOR 4 - UPPER LEVEL", 350, 1110, z=0.05, size=28.0)
     f4.add_label("ROOF VOID / UNUSABLE", 100, 650, size=18.0, rotation_z=90.0)

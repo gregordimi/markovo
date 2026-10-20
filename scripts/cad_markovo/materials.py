@@ -99,13 +99,6 @@ def load_polyhaven_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Mat
         loaded_mat.diffuse_color = (0.58, 0.32, 0.18, 1.0)
         loaded_mat.name = name
 
-        # Mark as asset so it appears in Blender's Asset Browser
-        try:
-            if not getattr(loaded_mat, "asset_data", None):
-                loaded_mat.asset_mark()
-        except Exception:
-            pass
-
         # Verify and fix texture image paths if needed
         textures_dir = blend_file.parent / "textures"
         if loaded_mat.node_tree:
@@ -123,6 +116,206 @@ def load_polyhaven_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Mat
     except Exception as e:
         print(f"[Materials] Warning: Failed to load Poly Haven material ({e}). Falling back to procedural.")
         return create_clay_tiles_material(name=name)
+
+
+def load_polyhaven_wood_material(name: str = "wood_floor_worn") -> bpy.types.Material:
+    """
+    Loads Poly Haven's 'wood_floor_worn' scanned PBR wood floor material from the assets/ folder.
+    Configures viewport diffuse preview color and ensures valid texture paths.
+    Falls back gracefully to procedural `create_parquet_light_wood_material()` if the asset is missing.
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+    candidate_paths = [
+        repo_root / "assets" / "wood_floor_worn_4k.blend" / "wood_floor_worn_4k.blend",
+        repo_root / "assets" / "wood_floor_worn_4k.blend",
+        repo_root / "assets" / "wood_floor_worn.blend",
+    ]
+
+    blend_file = None
+    for p in candidate_paths:
+        if p.is_file():
+            blend_file = p
+            break
+
+    if not blend_file:
+        print("[Materials] Poly Haven wood floor blend file not found in assets/. Falling back to procedural parquet.")
+        return create_parquet_light_wood_material(name=name)
+
+    try:
+        with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
+            if "wood_floor_worn" in data_from.materials:
+                data_to.materials = ["wood_floor_worn"]
+            elif data_from.materials:
+                data_to.materials = [data_from.materials[0]]
+
+        loaded_mat = bpy.data.materials.get("wood_floor_worn")
+        if not loaded_mat:
+            print("[Materials] 'wood_floor_worn' material not found in library. Falling back to procedural.")
+            return create_parquet_light_wood_material(name=name)
+
+        # Set rich warm amber-brown wood viewport diffuse color for solid mode
+        loaded_mat.diffuse_color = (0.72, 0.52, 0.32, 1.0)
+        loaded_mat.name = name
+
+        # Verify and fix texture image paths if needed
+        textures_dir = blend_file.parent / "textures"
+        if textures_dir.is_dir() and loaded_mat.node_tree:
+            available = {f.name.lower(): f for f in textures_dir.iterdir() if f.is_file()}
+            for node in loaded_mat.node_tree.nodes:
+                if node.type == "TEX_IMAGE" and node.image:
+                    img_path = Path(bpy.path.abspath(node.image.filepath))
+                    if not img_path.exists():
+                        cur_name_lower = img_path.name.lower()
+                        if cur_name_lower in available:
+                            node.image.filepath = str(available[cur_name_lower])
+                            node.image.reload()
+                        else:
+                            for channel in ("diff", "disp", "rough", "nor_gl"):
+                                if channel in cur_name_lower:
+                                    for avail_name, avail_path in available.items():
+                                        if channel in avail_name:
+                                            node.image.filepath = str(avail_path)
+                                            node.image.reload()
+                                            break
+                                    break
+
+        return loaded_mat
+
+    except Exception as e:
+        print(f"[Materials] Warning: Failed to load Poly Haven wood floor ({e}). Falling back to procedural.")
+        return create_parquet_light_wood_material(name=name)
+
+
+def load_polyhaven_maple_material(name: str = "white_maple_veneer") -> bpy.types.Material:
+    """
+    Loads Poly Haven's 'white_maple_veneer' scanned PBR wood veneer material from assets/.
+    Used for the internal stairs.
+    Falls back gracefully to procedural parquet if the asset is missing.
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+    candidate_paths = [
+        repo_root / "assets" / "white_maple_veneer_4k.blend" / "white_maple_veneer_4k.blend",
+        repo_root / "assets" / "white_maple_veneer_4k.blend",
+        repo_root / "assets" / "white_maple_veneer.blend",
+    ]
+
+    blend_file = None
+    for p in candidate_paths:
+        if p.is_file():
+            blend_file = p
+            break
+
+    if not blend_file:
+        print("[Materials] Poly Haven white_maple_veneer not found in assets/. Falling back to procedural wood.")
+        return create_parquet_light_wood_material(name=name)
+
+    try:
+        with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
+            if "white_maple_veneer" in data_from.materials:
+                data_to.materials = ["white_maple_veneer"]
+            elif data_from.materials:
+                data_to.materials = [data_from.materials[0]]
+
+        loaded_mat = bpy.data.materials.get("white_maple_veneer")
+        if not loaded_mat:
+            return create_parquet_light_wood_material(name=name)
+
+        # Viewport color: warm pale maple wood for solid mode
+        loaded_mat.diffuse_color = (0.86, 0.82, 0.74, 1.0)
+        loaded_mat.name = name
+
+        textures_dir = blend_file.parent / "textures"
+        if textures_dir.is_dir() and loaded_mat.node_tree:
+            available = {f.name.lower(): f for f in textures_dir.iterdir() if f.is_file()}
+            for node in loaded_mat.node_tree.nodes:
+                if node.type == "TEX_IMAGE" and node.image:
+                    img_path = Path(bpy.path.abspath(node.image.filepath))
+                    if not img_path.exists():
+                        cur_lower = img_path.name.lower()
+                        if cur_lower in available:
+                            node.image.filepath = str(available[cur_lower])
+                            node.image.reload()
+                        else:
+                            for ch in ("diff", "disp", "rough", "nor_gl", "ao"):
+                                if ch in cur_lower:
+                                    for av_name, av_path in available.items():
+                                        if ch in av_name:
+                                            node.image.filepath = str(av_path)
+                                            node.image.reload()
+                                            break
+                                    break
+
+        return loaded_mat
+
+    except Exception as e:
+        print(f"[Materials] Warning: Failed to load white_maple_veneer ({e}).")
+        return create_parquet_light_wood_material(name=name)
+
+
+def load_polyhaven_concrete_material(name: str = "concrete_floor_01") -> bpy.types.Material:
+    """
+    Loads Poly Haven's 'concrete_floor_01' scanned PBR architectural concrete material from assets/.
+    Used for the main stairs and stair landings.
+    Falls back gracefully to procedural cement mosaic if the asset is missing.
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+    candidate_paths = [
+        repo_root / "assets" / "concrete_floor_01_4k.blend" / "concrete_floor_01_4k.blend",
+        repo_root / "assets" / "concrete_floor_01_4k.blend",
+        repo_root / "assets" / "concrete_floor_01.blend",
+    ]
+
+    blend_file = None
+    for p in candidate_paths:
+        if p.is_file():
+            blend_file = p
+            break
+
+    if not blend_file:
+        print("[Materials] Poly Haven concrete_floor_01 not found in assets/. Falling back to cement mosaic.")
+        return create_cement_mosaic_material(name=name)
+
+    try:
+        with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
+            if "concrete_floor_01" in data_from.materials:
+                data_to.materials = ["concrete_floor_01"]
+            elif data_from.materials:
+                data_to.materials = [data_from.materials[0]]
+
+        loaded_mat = bpy.data.materials.get("concrete_floor_01")
+        if not loaded_mat:
+            return create_cement_mosaic_material(name=name)
+
+        # Viewport color: sleek architectural concrete grey for solid mode
+        loaded_mat.diffuse_color = (0.65, 0.65, 0.64, 1.0)
+        loaded_mat.name = name
+
+        textures_dir = blend_file.parent / "textures"
+        if textures_dir.is_dir() and loaded_mat.node_tree:
+            available = {f.name.lower(): f for f in textures_dir.iterdir() if f.is_file()}
+            for node in loaded_mat.node_tree.nodes:
+                if node.type == "TEX_IMAGE" and node.image:
+                    img_path = Path(bpy.path.abspath(node.image.filepath))
+                    if not img_path.exists():
+                        cur_lower = img_path.name.lower()
+                        if cur_lower in available:
+                            node.image.filepath = str(available[cur_lower])
+                            node.image.reload()
+                        else:
+                            for ch in ("diff", "disp", "rough", "nor_gl", "ao", "bump"):
+                                if ch in cur_lower:
+                                    for av_name, av_path in available.items():
+                                        if ch in av_name:
+                                            node.image.filepath = str(av_path)
+                                            node.image.reload()
+                                            break
+                                    break
+
+        return loaded_mat
+
+    except Exception as e:
+        print(f"[Materials] Warning: Failed to load concrete_floor_01 ({e}).")
+        return create_cement_mosaic_material(name=name)
 
 
 def create_clay_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Material:
@@ -396,8 +589,19 @@ def create_materials() -> dict:
 
         # Floor Finishes (Matched to user reference photos & Poly Haven scanned PBR)
         "clay_tiles": load_polyhaven_tiles_material("brown_floor_tiles"),
-        "parquet_light_wood": create_parquet_light_wood_material("Parquet_Coniferous_Light_Mat"),
+        "parquet_light_wood": load_polyhaven_wood_material("wood_floor_worn"),
         "cement_mosaic": create_cement_mosaic_material("Cement_Mosaic_Stairs_Mat"),
+        "concrete_floor": load_polyhaven_concrete_material("concrete_floor_01"),
+        "internal_stairs": load_polyhaven_maple_material("white_maple_veneer"),
+        "main_stairs": load_polyhaven_concrete_material("concrete_floor_01"),
+
+        # Metal Work & Architectural Railings
+        "aluminum": make_pbr_material(
+            "Aluminum_Railing_Mat",
+            (0.88, 0.89, 0.90, 1.0),
+            roughness=0.22,
+            metallic=0.96,
+        ),
 
         # Structural & Auxiliary Slabs
         "slab": make_pbr_material("Floor_Slab_Mat", (0.92, 0.91, 0.88, 1.0), roughness=0.6),
@@ -441,13 +645,4 @@ def create_materials() -> dict:
         "text": make_pbr_material("Text_Mat", (0.08, 0.08, 0.08, 1.0), roughness=0.4),
         "dim": make_pbr_material("Dim_Mat", (0.0, 0.33, 0.65, 1.0), roughness=0.4),
     }
-
-    # Mark materials as assets so they appear in Blender's Asset Browser under Current File
-    for mat in mats.values():
-        if mat and hasattr(mat, "asset_mark") and not getattr(mat, "asset_data", None):
-            try:
-                mat.asset_mark()
-            except Exception:
-                pass
-
     return mats

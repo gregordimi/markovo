@@ -98,57 +98,6 @@ def setup_lighting_and_cameras(stack: bool = False):
             bg.inputs[1].default_value = 0.85
 
 
-def setup_viewport_shading(shading_mode: str = "MATERIAL"):
-    """
-    Configures all 3D Viewport spaces to Material Preview mode (or specified mode).
-    This ensures PBR materials, scanned image textures, and procedural shaders
-    are immediately visible in the interactive Blender viewport instead of default monochrome Solid shading.
-    """
-    try:
-        wm = getattr(bpy.context, "window_manager", None)
-        if not wm:
-            return
-        for window in wm.windows:
-            screen = getattr(window, "screen", None)
-            if not screen:
-                continue
-            for area in screen.areas:
-                if area.type == "VIEW_3D":
-                    for space in area.spaces:
-                        if space.type == "VIEW_3D":
-                            space.shading.type = shading_mode
-    except Exception as e:
-        print(f"Notice: Could not set viewport shading ({e})")
-
-
-def register_project_asset_library():
-    """
-    Registers the project's assets/ directory in Blender's Preferences
-    as an Asset Library named 'Markovo Assets'. This allows materials and models to
-    appear directly in the Asset Browser under the 'Markovo Assets' catalog.
-    """
-    try:
-        prefs = bpy.context.preferences.filepaths.asset_libraries
-        assets_dir = Path(__file__).resolve().parents[2] / "assets"
-        if not assets_dir.exists():
-            return
-
-        # Check if already registered
-        for lib in prefs:
-            if Path(lib.path).resolve() == assets_dir.resolve():
-                return
-            if lib.name == "Markovo Assets":
-                lib.path = str(assets_dir)
-                return
-
-        new_lib = prefs.new(name="Markovo Assets")
-        new_lib.path = str(assets_dir)
-        print(f"      - Registered 'Markovo Assets' library: {assets_dir}")
-    except Exception as e:
-        print(f"Notice: Could not register asset library in preferences ({e})")
-
-
-
 def render_to_file(
     filepath: str,
     camera_name: str = "Camera_Perspective",

@@ -4,11 +4,33 @@ This guide provides an in-depth reference for the procedural and PBR shader mate
 
 ---
 
-## 1. Material Architecture Overview
+## 1. Material Architecture & Viewport Shading
 
+### 1.1 Dual-Mode Material Design
 All materials in the project are designed with dual compatibility:
 1. **Viewport Solid & Workbench Display**: Every material has its `diffuse_color` set to an appropriate RGBA tuple so it displays clearly in Blender's Solid Viewport shading mode.
-2. **Procedural PBR Shading (Cycles & Eevee)**: Full node networks connected to `ShaderNodeBsdfPrincipled` (Principled BSDF) outputting to `ShaderNodeOutputMaterial`.
+2. **Procedural & Scanned PBR Shading (Cycles & Eevee)**: Full node networks connected to `ShaderNodeBsdfPrincipled` (Principled BSDF) outputting to `ShaderNodeOutputMaterial`.
+
+---
+
+### 1.2 Why Materials Look Plain / Flat Gray in Default Viewport (`SOLID` Mode)
+When running `blender --python scripts/blender_floor_plans.py` interactively, Blender opens its 3D Viewport in **Solid Shading** mode by default.
+
+- **Solid Mode Behavior**: Blender's Solid mode deliberately ignores all texture image files (diffuse, roughness, normal maps) and procedural shader trees (brick, noise, wave nodes) in order to keep viewport framerates fast and editing responsive. Objects are shaded using their flat `diffuse_color` or default theme matcap.
+- **Materials ARE Assigned**: All materials (`brown_floor_tiles`, `parquet_light_wood`, `cement_mosaic`, `pvc_white`, etc.) are fully linked to the mesh material slots in scene data (`bpy.data.materials`).
+- **How to View Textures Interactively**:
+  To see the actual scanned 4K textures, normal maps, and procedural wood grain in Blender's 3D Viewport:
+  1. Hover your cursor over the 3D Viewport and press **`Z`** $\rightarrow$ select **`Material Preview`** (or press `Z` $\rightarrow$ `Rendered`).
+  2. Or click the **Material Preview** sphere icon (3rd sphere from left) in the top-right corner of the 3D Viewport header.
+- **Why Scripts Must NOT Force Material Preview on Launch**:
+  Forcing `shading.type = 'MATERIAL'` via Python during startup causes Blender / Eevee Next to immediately compile GPU / Metal shaders for every 4K texture (roughness exr, normal exr, displacement png, diffuse jpg) on launch, which freezes Blender for over a minute. Keeping the default Solid mode ensures that scene generation runs in $< 1.5$ seconds and the user can switch to Material Preview on demand.
+
+---
+
+### 1.3 Scene Materials vs. Asset Browser Catalog
+- **Scene Materials**: Any material created by the script or loaded from an external `.blend` file is stored in Blender's scene data block (`bpy.data.materials`). It is immediately visible in the **Material Properties** tab (checkerboard sphere icon in the Properties panel) and on every assigned object.
+- **Asset Browser**: Blender's Asset Browser only displays materials that have been explicitly marked as assets (`mat.asset_mark()`) OR reside in an external folder registered under `Blender Preferences -> File Paths -> Asset Libraries`. Downloaded assets from Poly Haven are standard `.blend` scene files containing materials on preview balls; they do not automatically appear in Blender's global asset catalog unless marked or registered.
+
 
 ---
 
@@ -42,7 +64,17 @@ Loads scanned 4K PBR tile materials directly from the project's [`assets/`](file
 
 ---
 
-### 2.3 `create_clay_tiles_material(name="Clay_Tiles_Mat")`
+### 2.3 `load_polyhaven_wood_material(name="wood_floor_worn")`
+Loads scanned 4K PBR worn wood plank floor material from the [`assets/`](file:///Users/gdimitrov/projects/markovo/assets) directory (`wood_floor_worn_4k.blend`).
+
+- Automatically links Diffuse, Roughness, Normal (OpenGL), and Displacement 4K EXR texture maps.
+- Applied to all bedroom and attic floors via `mats["parquet_light_wood"]`.
+- Sets warm amber-brown wood viewport diffuse preview color (`(0.72, 0.52, 0.32, 1.0)`).
+- **Graceful Fallback**: If the asset file is missing, automatically falls back to procedural `create_parquet_light_wood_material()`.
+
+---
+
+### 2.4 `create_clay_tiles_material(name="Clay_Tiles_Mat")`
 Generates artisanal Mediterranean terracotta/cotto floor tiles precisely matched to the user's reference photo. Features square tiles (~31x31 cm) with soft cloudy artisanal mottling and dark grey-brown cement grout lines.
 
 #### Shader Node Graph:

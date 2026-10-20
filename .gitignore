@@ -10,6 +10,7 @@ quit.blend
 # Rendered outputs and caches
 renders/
 blendcache_*/
+assets/
 
 # Python & OS clutter
 __pycache__/
