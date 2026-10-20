@@ -74,30 +74,30 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     # --------------------------------------------------------------------------
     # 2. Terraces: Solid Parapet Wall (Wall Material) + Terrace Coping (No Glass)
     # --------------------------------------------------------------------------
-    f3.add_terrace("NE_Balcony", 350, 920, 350, 120, open_edges=("N", "E"))
-    f3.add_terrace("SE_Balcony", 377, 0, 323, 120, open_edges=("S", "E", "W"))
-    f3.add_terrace("West_Balcony", -120, 195, 120, 355, open_edges=("N", "W", "S"))
+    f3.add_terrace("Living_Room_Balcony", 350, 920, 350, 120, open_edges=("N", "E"))
+    f3.add_terrace("Bedroom_Balcony", 377, 0, 323, 120, open_edges=("S", "E", "W"))
+    f3.add_terrace("Stairwell_Balcony", -120, 195, 120, 355, open_edges=("N", "W", "S"))
 
     # --------------------------------------------------------------------------
     # 3. Structural & Exterior Walls (15 cm)
     # --------------------------------------------------------------------------
-    f3.add_wall(0, 1040, 350, 1040, 15)      # Kitchen North wall
-    f3.add_wall(350, 1040, 350, 920, 15)     # Balcony divider West
-    f3.add_wall(350, 920, 700, 920, 15)      # Living Room North wall
-    f3.add_wall(700, 920, 700, 120, 15)      # East exterior wall
-    f3.add_wall(0, 1040, 0, 120, 15)         # West exterior wall
-    f3.add_wall(0, 120, 377, 120, 15)        # South stairwell wall
-    f3.add_wall(377, 120, 700, 120, 15)      # Bedroom South wall
+    f3.add_wall(0, 1040, 350, 1040, 15, id="wall_kitchen_window", room="Kitchen")
+    f3.add_wall(350, 1040, 350, 920, 15, id="wall_living_balcony_divider", room="Living_Room")
+    f3.add_wall(350, 920, 700, 920, 15, id="wall_living_balcony", room="Living_Room")
+    f3.add_wall(700, 920, 700, 120, 15, id="wall_party_700", room="Living_Room")
+    f3.add_wall(0, 1040, 0, 120, 15, id="wall_exterior_facade_0", room="Kitchen")
+    f3.add_wall(0, 120, 377, 120, 15, id="wall_stairwell_landing", room="Stair_Landing")
+    f3.add_wall(377, 120, 700, 120, 15, id="wall_bedroom_balcony", room="Bedroom")
 
     # --------------------------------------------------------------------------
     # 4. Internal Partitions
     # --------------------------------------------------------------------------
-    f3.add_wall(155, 550, 230, 550, 10)      # Utility stub (leaves 155 cm opening)
-    f3.add_wall(230, 550, 230, 290, 10)      # Utility + Bath East wall
-    f3.add_wall(0, 450, 230, 450, 10)        # Bath North wall
-    f3.add_wall(0, 290, 377, 290, 10)        # Bath South + Hallway entry wall
-    f3.add_wall(377, 500, 700, 500, 12)      # Bedroom North wall
-    f3.add_wall(377, 500, 377, 120, 12)      # Bedroom West wall
+    f3.add_wall(155, 550, 230, 550, 10, id="wall_utility_stub", room="Utility")
+    f3.add_wall(230, 550, 230, 290, 10, id="wall_bath_utility_divider", room="Bathroom")
+    f3.add_wall(0, 450, 230, 450, 10, id="wall_bath_utility_partition", room="Bathroom")
+    f3.add_wall(0, 290, 377, 290, 10, id="wall_stairwell_entry", room="Hallway")
+    f3.add_wall(377, 500, 700, 500, 12, id="wall_bedroom_living_divider", room="Bedroom")
+    f3.add_wall(377, 500, 377, 120, 12, id="wall_bedroom_hallway", room="Bedroom")
 
     # --------------------------------------------------------------------------
     # 5. Plumbing & Ventilation Shaft
@@ -113,30 +113,97 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     # --------------------------------------------------------------------------
     # 6. Windows & Glazed Assemblies (White uPVC Frames & Mullions)
     # --------------------------------------------------------------------------
-    # Kitchen North window (standard 3-segment window: 1 static next to wall + 2 opening)
-    f3.add_window(56, 1040, 294, 1040, label="238 (1 static + 2 open)")
+    # Kitchen window (standard 3-segment window: 1 static next to wall + 2 opening)
+    f3.add_window(
+        56, 1040, 294, 1040,
+        label="238 (1 static + 2 open)",
+        id="kitchen_window",
+        room="Kitchen",
+    )
 
-    # Balcony divider & Living Room North assembly
-    f3.add_window(350, 935, 350, 1025, label="127")
-    f3.add_window(413, 920, 636, 920, label="223 (3x75)")
-    f3.add_door(413, 920, 75, 270, 360, 0, is_exterior=True)
+    # Living Room Balcony assembly
+    f3.add_window(
+        350, 935, 350, 1025,
+        label="127",
+        id="balcony_divider_window",
+        room="Living_Room",
+    )
+    f3.add_window(
+        413, 920, 636, 920,
+        label="223 (3x75)",
+        id="living_room_window",
+        room="Living_Room",
+    )
+    f3.add_door(
+        413, 920, 75, 270, 360, 0,
+        is_exterior=True,
+        id="living_room_balcony_door",
+        room="Living_Room",
+    )
 
-    # West wall openings
-    f3.add_window(0, 465, 0, 535)
-    f3.add_window(0, 330, 0, 410, label="80")
-    f3.add_window(0, 195, 0, 272, label="77")
-    f3.add_door(0, 195, 77, 0, 90, 90, is_exterior=True)
+    # Utility, Bathroom & Stairwell facade openings
+    f3.add_window(
+        0, 465, 0, 535,
+        id="utility_window",
+        room="Utility",
+    )
+    f3.add_window(
+        0, 330, 0, 410,
+        label="80",
+        id="bath_window",
+        room="Bathroom",
+    )
+    f3.add_window(
+        0, 195, 0, 272,
+        label="77",
+        id="stairwell_window",
+        room="Stair_Landing",
+    )
+    f3.add_door(
+        0, 195, 77, 0, 90, 90,
+        is_exterior=True,
+        id="stairwell_balcony_door",
+        room="Stair_Landing",
+    )
 
-    # Bedroom South glazed assembly
-    f3.add_window(437, 120, 662, 120, label="225")
-    f3.add_door(437, 120, 75, 0, 90, 0, is_exterior=True)
+    # Bedroom Balcony assembly
+    f3.add_window(
+        437, 120, 662, 120,
+        label="225",
+        id="bedroom_window",
+        room="Bedroom",
+    )
+    f3.add_door(
+        437, 120, 75, 0, 90, 0,
+        is_exterior=True,
+        id="bedroom_balcony_door",
+        room="Bedroom",
+    )
 
     # --------------------------------------------------------------------------
     # 7. Internal Doors (Warm Wood Leaves)
     # --------------------------------------------------------------------------
-    f3.add_door(230, 300, 74, 90, 180, 90, thickness=10, is_exterior=False)
-    f3.add_door(360, 290, 90, 90, 180, 180, thickness=10, is_exterior=False)
-    f3.add_door(377, 465, 80, 270, 360, 270, thickness=12, is_exterior=False)
+    f3.add_door(
+        230, 300, 74, 90, 180, 90,
+        thickness=10,
+        is_exterior=False,
+        id="bath_entry_door",
+        room="Bathroom",
+    )
+    f3.add_door(
+        360, 290, 90, 90, 180, 180,
+        thickness=10,
+        is_exterior=False,
+        id="stairwell_hallway_door",
+        room="Hallway",
+    )
+    f3.add_door(
+        377, 465, 80, 270, 360, 270,
+        thickness=12,
+        is_exterior=False,
+        id="bedroom_entry_door",
+        room="Bedroom",
+    )
 
     # --------------------------------------------------------------------------
     # 8. Stairs
@@ -150,6 +217,8 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
         mat_key="internal_stairs",
         has_curve=False,
         has_railing=False,
+        id="internal_stairs",
+        room="Living_Room",
     )
     # Main Stairs: Architectural Concrete with double curved winders (bottom and top) + round aluminum railing
     f3.add_stairs(
@@ -160,6 +229,8 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
         mat_key="main_stairs",
         has_curve=True,
         has_railing=True,
+        id="main_stairs",
+        room="Stair_Landing",
     )
 
     # --------------------------------------------------------------------------

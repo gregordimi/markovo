@@ -71,12 +71,23 @@ class FloorPlanBuilder:
         self.labels: List[dict] = []
         self.custom_prisms: List[dict] = []
 
-    def add_wall(self, x1: float, y1: float, x2: float, y2: float, thickness: float = 15.0):
+    def add_wall(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        thickness: float = 15.0,
+        id: str = None,
+        room: str = None,
+    ):
         """Adds a structural or partition wall."""
         self.walls.append({
             "x1": float(x1), "y1": float(y1),
             "x2": float(x2), "y2": float(y2),
             "thickness": float(thickness),
+            "id": id,
+            "room": room,
         })
 
     def add_window(
@@ -89,6 +100,8 @@ class FloorPlanBuilder:
         label: str = None,
         sill: float = WIN_SILL,
         top: float = WIN_TOP,
+        id: str = None,
+        room: str = None,
     ):
         """Adds a window opening and White uPVC glazed assembly."""
         self.windows.append({
@@ -98,6 +111,8 @@ class FloorPlanBuilder:
             "label": label,
             "sill": sill,
             "top": top,
+            "id": id,
+            "room": room,
         })
 
     def add_door(
@@ -110,6 +125,8 @@ class FloorPlanBuilder:
         wall_angle: float,
         thickness: float = 15.0,
         is_exterior: bool = False,
+        id: str = None,
+        room: str = None,
     ):
         """
         Adds a door opening and swing door assembly.
@@ -127,6 +144,8 @@ class FloorPlanBuilder:
             "wall_angle": float(wall_angle),
             "thickness": float(thickness),
             "is_exterior": is_exterior,
+            "id": id,
+            "room": room,
         })
 
     def add_room(
@@ -182,6 +201,8 @@ class FloorPlanBuilder:
         mat_key: str = "cement_mosaic",
         has_curve: bool = False,
         has_railing: bool = False,
+        id: str = None,
+        room: str = None,
     ):
         """Adds stairs with designated finish and optional curved winders and railing."""
         self.stairs.append({
@@ -193,6 +214,8 @@ class FloorPlanBuilder:
             "mat_key": mat_key,
             "has_curve": has_curve,
             "has_railing": has_railing,
+            "id": id,
+            "room": room,
         })
 
     def add_label(
@@ -361,8 +384,9 @@ class FloorPlanBuilder:
                 mid = 0.5 * (a + b)
                 if b - a > 2.0 and not any(da <= mid <= db for da, db in overlapping_doors):
                     win_counter += 1
+                    win_prefix = f"{self.name}_{win['id']}" if win.get("id") else self.name
                     create_window_3d(
-                        name_prefix=self.name,
+                        name_prefix=win_prefix,
                         idx=win_counter,
                         x1=x1 + ux * a,
                         y1=y1 + uy * a,
@@ -380,8 +404,9 @@ class FloorPlanBuilder:
     def _build_doors(self):
         """Builds all 3D doors. Exterior doors use White uPVC; interior doors use wood."""
         for d_idx, d in enumerate(self.doors):
+            door_prefix = f"{self.name}_{d['id']}" if d.get("id") else self.name
             create_door_3d(
-                name_prefix=self.name,
+                name_prefix=door_prefix,
                 idx=d_idx + 1,
                 hx=d["hx"],
                 hy=d["hy"],
@@ -462,9 +487,10 @@ class FloorPlanBuilder:
         """Builds all stairs with designated finish and optional curves/railings."""
         for s in self.stairs:
             stair_mat = self.mats.get(s.get("mat_key", "cement_mosaic"), self.mats.get("cement_mosaic"))
+            stair_prefix = f"{self.name}_{s['id']}" if s.get("id") else self.name
             if s.get("has_curve"):
                 create_curved_stairs_with_railing_3d(
-                    name_prefix=self.name,
+                    name_prefix=stair_prefix,
                     x=s["x"], y=s["y"],
                     w=s["w"], h=s["h"],
                     num_treads=s["num_treads"],
@@ -479,7 +505,7 @@ class FloorPlanBuilder:
                 )
             else:
                 create_stairs_3d(
-                    name_prefix=self.name,
+                    name_prefix=stair_prefix,
                     x=s["x"], y=s["y"],
                     w=s["w"], h=s["h"],
                     num_treads=s["num_treads"],

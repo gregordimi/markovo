@@ -77,6 +77,11 @@ markovo/
    - `STACK_FLOORS = False`: Floor 3 at $(0, 0, 0)$ and Floor 4 at $(10.5, 0, 0)$ side-by-side for 2-panel CAD review.
    - `STACK_FLOORS = True`: Floor 4 stacked directly above Floor 3 at $(0, 0, \text{WALL\_HEIGHT} + \text{SLAB\_THICK})$.
 
+4. **Semantic Referencing Architecture (Room & Floor Names)**:
+   - All architectural elements (walls, windows, doors, stairs, terraces) are identified purely by their **Room Name** and **Floor Level** (e.g., `room="Kitchen"`, `id="kitchen_window"`).
+   - Directional references (North, South, East, West) are **never used** in code identifiers or comments to eliminate ambiguity.
+   - The project models the right unit of a semi-detached twin house across two levels: **Floor 3 (Main Level)** and **Floor 4 (Attic Level)**.
+
 ---
 
 ## 4. Materials Architecture & How to Change Them
@@ -96,7 +101,7 @@ Materials are defined in [`scripts/cad_markovo/materials.py`](file:///Users/gdim
 | `"glass"` | `Window_Glass_Mat` | PBR Transmission Glass | Window & Balcony Door Double-Glazing Panes |
 | `"door_wood"` | `Door_Wood_Mat` | PBR Natural Wood | Interior Door Leaves |
 | `"door_frame"` | `Door_Frame_Mat` | PBR Dark Trim | Interior Door Frames & Heads |
-| `"void"` | `Roof_Void_Mat` | PBR Neutral Void | Attic West Unusable Roof Void Area |
+| `"void"` | `Roof_Void_Mat` | PBR Neutral Void | Attic Unusable Roof Void Area |
 | `"bath_tiles"` | `Bath_Tiles_Mat` | PBR Semi-Gloss Ceramic | Bathroom Floor Slab |
 | `"shaft"` | `Shaft_Mat` | PBR Plaster | Bathroom Plumbing/Ventilation Shaft |
 
@@ -177,28 +182,29 @@ f3.add_room(
 
 ### 5.2 Adding or Modifying a Wall
 ```python
-f3.add_wall(x1=377, y1=300, x2=700, y2=300, thickness=12.0)
+f3.add_wall(x1=377, y1=300, x2=700, y2=300, thickness=12.0, id="wall_bedroom_divider", room="Bedroom")
 ```
 *Note: Wall cutouts for any doors or windows overlapping this segment are computed automatically.*
 
 ### 5.3 Adding or Modifying Windows & Doors
+Every window and door supports optional `id` and `room` parameters for unambiguous, fast semantic search:
 - **Window** (White uPVC frame + glass):
   ```python
-  f3.add_window(x1=437, y1=120, x2=662, y2=120, thickness=15.0, label="225")
+  f3.add_window(x1=437, y1=120, x2=662, y2=120, thickness=15.0, label="225", id="bedroom_window", room="Bedroom")
   ```
 - **Exterior Balcony Door** (White uPVC frame + leaf):
   ```python
-  f3.add_door(hx=437, hy=120, radius=75.0, start_angle=0, end_angle=90, wall_angle=0, is_exterior=True)
+  f3.add_door(hx=437, hy=120, radius=75.0, start_angle=0, end_angle=90, wall_angle=0, is_exterior=True, id="bedroom_balcony_door", room="Bedroom")
   ```
 - **Interior Door** (Warm natural wood leaf):
   ```python
-  f3.add_door(hx=230, hy=300, radius=74.0, start_angle=90, end_angle=180, wall_angle=90, thickness=10.0, is_exterior=False)
+  f3.add_door(hx=230, hy=300, radius=74.0, start_angle=90, end_angle=180, wall_angle=90, thickness=10.0, is_exterior=False, id="bath_entry_door", room="Bathroom")
   ```
 
 ### 5.4 Adding or Modifying a Terrace / Balcony
 ```python
 f3.add_terrace(
-    name="South_Terrace",
+    name="Bedroom_Balcony",
     x=377, y=0, w=323, h=120,
     open_edges=("S", "E", "W"),   # Open edges where solid parapet + coping are built
     mat_key="balcony",            # Balcony floor slab material
@@ -213,6 +219,8 @@ f3.add_stairs(
     num_treads=9,
     direction="right",             # "right" (climbing +X) or "left" (climbing -X)
     label="INTERNAL STAIRS",
+    id="internal_stairs",
+    room="Living_Room",
 )
 ```
 *Rule: Stairs automatically use `cement_mosaic` for all treads and risers.*

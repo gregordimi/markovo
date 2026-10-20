@@ -747,16 +747,16 @@ def create_curved_stairs_with_railing_3d(
     parent: bpy.types.Object = None,
 ):
     """
-    Constructs 3D main stairs ascending from the West landing (next to the terrace door)
-    to the East landing (in front of the attic door) with symmetrical curves at BOTH ends:
+    Constructs 3D main stairs ascending from the lower landing (next to the balcony door)
+    to the upper landing (in front of the attic door) with symmetrical curves at BOTH ends:
     1. Bottom curved / round winder steps 1..5 in corner [15, 100], y in [120, 205],
        fanning through 90 degrees around pivot (100, 205) starting at landing level (z=0.175 m)
        up to z=0.875 m.
-    2. Middle straight steps 6..11 running East along x from 100 to 265, y in [120, 205],
+    2. Middle straight steps 6..11 running along x from 100 to 265, y in [120, 205],
        ascending from z=1.05 m up to z=1.925 m.
     3. Top curved / round winder steps 12..16 in corner [265, 350], y in [120, 205],
        fanning through 90 degrees around pivot (265, 205) ascending from z=2.10 m
-       up to z=2.80 m (stepping North directly onto the Floor 4 landing).
+       up to z=2.80 m (stepping directly onto the Floor 4 landing).
     4. Sleek round aluminum railing (central newel posts, intermediate balusters,
        continuous sloping top handrail, round safety rails).
     """
@@ -771,7 +771,7 @@ def create_curved_stairs_with_railing_3d(
     pivot_y = y + h  # 205.0 cm
     radius = 85.0
 
-    # 1. Bottom Curved Section: Steps 1..5 starting from the West landing next to terrace door
+    # 1. Bottom Curved Section: Steps 1..5 starting from the lower landing next to balcony door
     # Curves through 90 deg around pivot (100, 205) from theta = pi (180 deg) to 1.5*pi (270 deg)
     for k in range(num_curved_btm):
         z_top = (k + 1) * step_h
@@ -798,7 +798,7 @@ def create_curved_stairs_with_railing_3d(
             parent,
         )
 
-    # 2. Middle Straight Section: Steps 6..11 running East along x from 100 to 265, y in [120, 205]
+    # 2. Middle Straight Section: Steps 6..11 running along x from 100 to 265, y in [120, 205]
     straight_w = (pivot_top_x - pivot_btm_x) / float(num_straight)  # 165 / 6 = 27.5 cm
     for i in range(num_straight):
         x_left = pivot_btm_x + i * straight_w
@@ -817,7 +817,7 @@ def create_curved_stairs_with_railing_3d(
             parent,
         )
 
-    # 3. Top Curved Section: Steps 12..16 curving into the East landing in front of the attic door
+    # 3. Top Curved Section: Steps 12..16 curving into the upper landing in front of the attic door
     # Curves through 90 deg around pivot (265, 205) from theta = 1.5*pi (270 deg) to 2.0*pi (360 deg)
     for m in range(num_curved_top):
         z_top = (num_curved_btm + num_straight + m + 1) * step_h
