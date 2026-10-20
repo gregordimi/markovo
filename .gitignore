@@ -1,0 +1,18 @@
+# Blender auto-save and backup files
+*.blend1
+*.blend2
+*.blend3
+*.blend4
+*.blend5
+*.blend[0-9]*
+quit.blend
+
+# Rendered outputs and caches
+renders/
+blendcache_*/
+
+# Python & OS clutter
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
