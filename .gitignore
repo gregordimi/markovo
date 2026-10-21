@@ -8,7 +8,7 @@
 quit.blend
 
 # Rendered outputs and caches
-renders/
+# renders/
 blendcache_*/
 assets/
 
