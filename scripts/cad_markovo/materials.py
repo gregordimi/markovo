@@ -71,8 +71,6 @@ def load_polyhaven_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Mat
         repo_root / "assets" / "terracotta_floor_tiles_4k.blend" / "terracotta_floor_tiles_4k.blend",
         repo_root / "assets" / "terracotta_floor_tiles_4k.blend",
         repo_root / "assets" / "terracotta_floor_tiles.blend",
-        repo_root / "assets" / "brown_floor_tiles_4k.blend" / "brown_floor_tiles_4k.blend",
-        repo_root / "assets" / "brown_floor_tiles_4k.blend",
     ]
 
     blend_file = None
@@ -82,18 +80,14 @@ def load_polyhaven_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Mat
             break
 
     if not blend_file:
-        print("[Materials] Poly Haven blend file not found in assets/. Falling back to procedural cotto tiles.")
+        print("[Materials] Poly Haven terracotta_floor_tiles blend file not found in assets/. Falling back to procedural cotto tiles.")
         return create_clay_tiles_material(name=name)
 
     try:
         target_mat = "terracotta_floor_tiles"
         with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
             if "terracotta_floor_tiles" in data_from.materials:
-                target_mat = "terracotta_floor_tiles"
-                data_to.materials = [target_mat]
-            elif "brown_floor_tiles" in data_from.materials:
-                target_mat = "brown_floor_tiles"
-                data_to.materials = [target_mat]
+                data_to.materials = ["terracotta_floor_tiles"]
             elif data_from.materials:
                 target_mat = data_from.materials[0]
                 data_to.materials = [target_mat]
