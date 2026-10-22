@@ -78,6 +78,7 @@ class FloorPlanBuilder:
         x2: float,
         y2: float,
         thickness: float = 15.0,
+        z_top=WALL_HEIGHT,
         id: str = None,
         room: str = None,
     ):
@@ -86,6 +87,7 @@ class FloorPlanBuilder:
             "x1": float(x1), "y1": float(y1),
             "x2": float(x2), "y2": float(y2),
             "thickness": float(thickness),
+            "z_top": z_top,
             "id": id,
             "room": room,
         })
@@ -296,6 +298,8 @@ class FloorPlanBuilder:
                         wall_wins.append((a, b, win.get("sill", WIN_SILL), win.get("top", WIN_TOP)))
                         cut_points.update([a, b])
 
+            wall_zt = w.get("z_top", WALL_HEIGHT)
+
             sorted_pts = sorted(cut_points)
             for s_idx in range(len(sorted_pts) - 1):
                 a, b = sorted_pts[s_idx], sorted_pts[s_idx + 1]
@@ -306,6 +310,16 @@ class FloorPlanBuilder:
                 sx2, sy2 = x1 + ux * b, y1 + uy * b
                 quad = wall_quad(sx1, sy1, sx2, sy2, thick)
 
+                if isinstance(wall_zt, (list, tuple)):
+                    zt_start, zt_end = wall_zt[0], wall_zt[1]
+                    ta = a / L if L > 1e-6 else 0.0
+                    tb = b / L if L > 1e-6 else 1.0
+                    za = zt_start + ta * (zt_end - zt_start)
+                    zb = zt_start + tb * (zt_end - zt_start)
+                    quad_zt = [za, zb, zb, za]
+                else:
+                    quad_zt = wall_zt
+
                 has_door = any(da <= mid <= db for da, db in wall_doors)
                 matched_win = next((w_info for w_info in wall_wins if w_info[0] <= mid <= w_info[1]), None)
 
@@ -315,7 +329,7 @@ class FloorPlanBuilder:
                         f"{self.name}_Wall_{w_idx}_LintelD_{s_idx}",
                         quad,
                         DOOR_HEIGHT,
-                        WALL_HEIGHT,
+                        quad_zt,
                         self.mats["wall"],
                         self.col,
                         self.root,
@@ -336,7 +350,7 @@ class FloorPlanBuilder:
                         f"{self.name}_Wall_{w_idx}_LintelW_{s_idx}",
                         quad,
                         w_top,
-                        WALL_HEIGHT,
+                        quad_zt,
                         self.mats["wall"],
                         self.col,
                         self.root,
@@ -347,7 +361,7 @@ class FloorPlanBuilder:
                         f"{self.name}_Wall_{w_idx}_Solid_{s_idx}",
                         quad,
                         0.0,
-                        WALL_HEIGHT,
+                        quad_zt,
                         self.mats["wall"],
                         self.col,
                         self.root,

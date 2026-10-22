@@ -65,8 +65,11 @@ def create_prism_from_quad(
     mesh = bpy.data.meshes.new(name)
     bm = bmesh.new()
 
-    verts_btm = [bm.verts.new((x * CM, y * CM, z_bottom)) for x, y in corners_2d]
-    verts_top = [bm.verts.new((x * CM, y * CM, z_top)) for x, y in corners_2d]
+    z_b = z_bottom if isinstance(z_bottom, (list, tuple)) else [z_bottom] * 4
+    z_t = z_top if isinstance(z_top, (list, tuple)) else [z_top] * 4
+
+    verts_btm = [bm.verts.new((x * CM, y * CM, z_b[i])) for i, (x, y) in enumerate(corners_2d)]
+    verts_top = [bm.verts.new((x * CM, y * CM, z_t[i])) for i, (x, y) in enumerate(corners_2d)]
 
     bm.faces.new(verts_btm[::-1])  # Normal points downwards
     bm.faces.new(verts_top)        # Normal points upwards
