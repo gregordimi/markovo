@@ -125,7 +125,7 @@ def main():
     mats = materials.create_materials()
     print(f"      - Loaded {len(mats)} materials:")
     print("        * White uPVC (External Doors & Windows)")
-    print("        * Poly Haven Scanned Tiles (Kitchen & Living Room)")
+    print("        * Poly Haven Terracotta Floor Tiles (Kitchen & Living Room)")
     print("        * Poly Haven Worn Wood Floor (Bedroom & Attic)")
     print("        * Poly Haven Concrete Floor 01 (Main Stairs & Landings)")
     print("        * Poly Haven White Maple Veneer (Internal Stairs)")

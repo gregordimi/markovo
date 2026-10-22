@@ -62,15 +62,17 @@ def make_pbr_material(
 
 def load_polyhaven_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Material:
     """
-    Loads Poly Haven's 'brown_floor_tiles' scanned PBR material from the assets/ folder.
+    Loads Poly Haven's 'terracotta_floor_tiles' scanned PBR material from the assets/ folder.
     Configures viewport diffuse preview color and ensures valid texture paths.
     Falls back gracefully to procedural `create_clay_tiles_material()` if the asset is missing.
     """
     repo_root = Path(__file__).resolve().parents[2]
     candidate_paths = [
+        repo_root / "assets" / "terracotta_floor_tiles_4k.blend" / "terracotta_floor_tiles_4k.blend",
+        repo_root / "assets" / "terracotta_floor_tiles_4k.blend",
+        repo_root / "assets" / "terracotta_floor_tiles.blend",
         repo_root / "assets" / "brown_floor_tiles_4k.blend" / "brown_floor_tiles_4k.blend",
         repo_root / "assets" / "brown_floor_tiles_4k.blend",
-        repo_root / "assets" / "brown_floor_tiles.blend",
     ]
 
     blend_file = None
@@ -84,32 +86,55 @@ def load_polyhaven_tiles_material(name: str = "Clay_Tiles_Mat") -> bpy.types.Mat
         return create_clay_tiles_material(name=name)
 
     try:
+        target_mat = "terracotta_floor_tiles"
         with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
-            if "brown_floor_tiles" in data_from.materials:
-                data_to.materials = ["brown_floor_tiles"]
+            if "terracotta_floor_tiles" in data_from.materials:
+                target_mat = "terracotta_floor_tiles"
+                data_to.materials = [target_mat]
+            elif "brown_floor_tiles" in data_from.materials:
+                target_mat = "brown_floor_tiles"
+                data_to.materials = [target_mat]
             elif data_from.materials:
-                data_to.materials = [data_from.materials[0]]
+                target_mat = data_from.materials[0]
+                data_to.materials = [target_mat]
 
-        loaded_mat = bpy.data.materials.get("brown_floor_tiles")
+        loaded_mat = bpy.data.materials.get(target_mat)
         if not loaded_mat:
-            print("[Materials] 'brown_floor_tiles' material not found in library. Falling back to procedural.")
+            print(f"[Materials] '{target_mat}' material not found in library. Falling back to procedural.")
             return create_clay_tiles_material(name=name)
 
         # Set rich warm terracotta viewport diffuse color
-        loaded_mat.diffuse_color = (0.58, 0.32, 0.18, 1.0)
+        loaded_mat.diffuse_color = (0.62, 0.35, 0.20, 1.0)
         loaded_mat.name = name
 
         # Verify and fix texture image paths if needed
         textures_dir = blend_file.parent / "textures"
-        if loaded_mat.node_tree:
+        if loaded_mat.node_tree and textures_dir.is_dir():
+            avail_textures = {p.stem.lower(): p for p in textures_dir.iterdir() if p.is_file()}
             for node in loaded_mat.node_tree.nodes:
                 if node.type == "TEX_IMAGE" and node.image:
                     img_path = Path(bpy.path.abspath(node.image.filepath))
                     if not img_path.exists():
-                        local_match = textures_dir / Path(node.image.filepath).name
+                        fname = Path(node.image.filepath).name
+                        local_match = textures_dir / fname
                         if local_match.exists():
                             node.image.filepath = str(local_match)
                             node.image.reload()
+                        else:
+                            stem_lower = Path(node.image.filepath).stem.lower()
+                            matched = None
+                            for k, p in avail_textures.items():
+                                if k == stem_lower or (
+                                    ("diff" in stem_lower and "diff" in k)
+                                    or ("disp" in stem_lower and "disp" in k)
+                                    or ("rough" in stem_lower and "rough" in k)
+                                    or ("nor" in stem_lower and "nor" in k)
+                                ):
+                                    matched = p
+                                    break
+                            if matched and matched.exists():
+                                node.image.filepath = str(matched)
+                                node.image.reload()
 
         return loaded_mat
 
@@ -588,7 +613,7 @@ def create_materials() -> dict:
         "terrace_coping": make_pbr_material("Terrace_Coping_Mat", (0.86, 0.85, 0.82, 1.0), roughness=0.5),
 
         # Floor Finishes (Matched to user reference photos & Poly Haven scanned PBR)
-        "clay_tiles": load_polyhaven_tiles_material("brown_floor_tiles"),
+        "clay_tiles": load_polyhaven_tiles_material("terracotta_floor_tiles"),
         "parquet_light_wood": load_polyhaven_wood_material("wood_floor_worn"),
         "cement_mosaic": create_cement_mosaic_material("Cement_Mosaic_Stairs_Mat"),
         "concrete_floor": load_polyhaven_concrete_material("concrete_floor_01"),

@@ -101,6 +101,13 @@ def download_asset(
             blend_dest = asset_dir / f"{asset_id}_{resolution}.blend"
             download_file(file_url, blend_dest, label=f"Blender Scene ({blend_dest.name})")
 
+            # Download exact include dependencies expected by the .blend file
+            includes = blend_info["blend"].get("include", {})
+            for inc_path, inc_data in includes.items():
+                dest_file = asset_dir / inc_path
+                if not dest_file.exists() and "url" in inc_data:
+                    download_file(inc_data["url"], dest_file, label=f"Include: {Path(inc_path).name}")
+
     # 2. Download PBR Textures
     textures_dir = asset_dir / "textures"
     textures_dir.mkdir(parents=True, exist_ok=True)
