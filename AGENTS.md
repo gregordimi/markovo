@@ -25,6 +25,7 @@ This file contains operating instructions for AI coding assistants working in th
   - [`config.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/config.py): Units (`CM = 0.01`), vertical dimensions, layout flags.
   - [`materials.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/materials.py): Material shaders & factory (`create_materials()`).
   - [`geometry.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/geometry.py): 3D CAD primitives, windows, doors, stairs, terrace walls & coping.
+  - [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/kitchen.py): Kitchen runs (birch plywood carcasses, olive inset fronts, wood worktop, sink, hob, tall fridge), declared via `FloorPlanBuilder.add_kitchen_run()`.
   - [`builder.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py): [`FloorPlanBuilder`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py#L40) class with automatic collinear lintel/sill cutouts.
   - [`floor3.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor3.py): Floor 3 (Main Level) specification.
   - [`floor4.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor4.py): Floor 4 (Attic Level) specification.

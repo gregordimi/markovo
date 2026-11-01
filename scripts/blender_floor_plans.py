@@ -55,12 +55,13 @@ if str(SCRIPT_DIR) not in sys.path:
 
 # Import modular package
 import cad_markovo
-from cad_markovo import config, materials, geometry, builder, floor3, floor4, scene
+from cad_markovo import config, materials, geometry, kitchen, builder, floor3, floor4, scene
 
 # Hot-reload all submodules when running iteratively inside Blender's Text Editor
 importlib.reload(config)
 importlib.reload(materials)
 importlib.reload(geometry)
+importlib.reload(kitchen)
 importlib.reload(builder)
 importlib.reload(floor3)
 importlib.reload(floor4)

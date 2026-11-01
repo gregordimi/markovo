@@ -31,6 +31,7 @@ from .geometry import (
     create_terrace_parapet_and_coping,
     create_text_label_3d,
 )
+from .kitchen import create_kitchen_run_3d
 
 
 def get_or_create_collection(name: str, parent: bpy.types.Collection = None) -> bpy.types.Collection:
@@ -70,6 +71,7 @@ class FloorPlanBuilder:
         self.stairs: List[dict] = []
         self.labels: List[dict] = []
         self.custom_prisms: List[dict] = []
+        self.kitchen_runs: List[dict] = []
 
     def add_wall(
         self,
@@ -254,6 +256,35 @@ class FloorPlanBuilder:
             "z_bottom": z_bottom,
             "z_top": z_top,
             "mat_key": mat_key,
+        })
+
+    def add_kitchen_run(
+        self,
+        origin: Tuple[float, float],
+        along: Tuple[float, float],
+        out: Tuple[float, float],
+        units: List[dict],
+        worktop_start: float = 0.0,
+        plinth_start: float = 0.0,
+        end_panel: bool = False,
+        id: str = None,
+        room: str = None,
+    ):
+        """
+        Adds a straight kitchen run of plywood units along a wall face.
+        `origin` is the run start on the wall face (cm); `along`/`out` are unit vectors
+        along the wall and into the room; `units` lists {"kind", "width"} in run order.
+        """
+        self.kitchen_runs.append({
+            "origin": origin,
+            "along": along,
+            "out": out,
+            "units": units,
+            "worktop_start": float(worktop_start),
+            "plinth_start": float(plinth_start),
+            "end_panel": end_panel,
+            "id": id,
+            "room": room,
         })
 
     # --------------------------------------------------------------------------
@@ -561,6 +592,24 @@ class FloorPlanBuilder:
                 self.root,
             )
 
+    def _build_kitchen_runs(self):
+        """Builds kitchen runs: plywood carcasses, olive inset fronts, worktops, sink and hob."""
+        for k_idx, run in enumerate(self.kitchen_runs, start=1):
+            run_id = run.get("id") or f"Kitchen_Run_{k_idx}"
+            create_kitchen_run_3d(
+                name_prefix=f"{self.name}_{run_id}",
+                origin=run["origin"],
+                along=run["along"],
+                out=run["out"],
+                units=run["units"],
+                mats=self.mats,
+                col=self.col,
+                parent=self.root,
+                worktop_start=run["worktop_start"],
+                plinth_start=run["plinth_start"],
+                end_panel=run["end_panel"],
+            )
+
     def build_geometry(self):
         """Constructs all floor components in clean dependency order."""
         self._build_walls_with_cutouts()
@@ -570,4 +619,5 @@ class FloorPlanBuilder:
         self._build_terraces()
         self._build_stairs()
         self._build_custom_prisms()
+        self._build_kitchen_runs()
         self._build_labels()

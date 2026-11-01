@@ -234,7 +234,47 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     )
 
     # --------------------------------------------------------------------------
-    # 9. Architectural Room Labels
+    # 9. Kitchen Joinery: Birch Plywood (Exposed Edges), Olive Inset Fronts,
+    #    Light Solid Wood Worktop (60 deep, 90 high)
+    # --------------------------------------------------------------------------
+    # Hot / cold / wet in the Utility, along the bath wall face (y=455),
+    # from the outside wall face (x=7.5) to the bath/utility divider face (x=225).
+    f3.add_kitchen_run(
+        origin=(7.5, 455),
+        along=(1, 0),
+        out=(0, 1),
+        units=[
+            {"kind": "blind", "width": 60},         # blind corner under the L
+            {"kind": "sink", "width": 60},
+            {"kind": "drawers", "width": 37.5},     # 50 in the draft; the model's Utility is 217.5 inside
+            {"kind": "tall_fridge", "width": 60},   # tall fridge-freezer against the divider
+        ],
+        id="kitchen_utility_run",
+        room="Utility",
+    )
+    # Along the outside wall: filler + hob/oven (in the Utility, 140 from the bath wall),
+    # then the 250 cm run: cabinet | drawers | drawers | double cabinet, with a free plywood end.
+    f3.add_kitchen_run(
+        origin=(7.5, 513),
+        along=(0, 1),
+        out=(1, 0),
+        units=[
+            {"kind": "filler", "width": 22},
+            {"kind": "hob_oven", "width": 60},
+            {"kind": "door", "width": 50},
+            {"kind": "drawers", "width": 50},
+            {"kind": "drawers", "width": 50},
+            {"kind": "double_door", "width": 100},
+        ],
+        worktop_start=2.0,   # meets the Utility worktop front edge at y=515
+        plinth_start=-5.0,   # meets the Utility plinth at the inner corner
+        end_panel=True,
+        id="kitchen_wall_run",
+        room="Kitchen",
+    )
+
+    # --------------------------------------------------------------------------
+    # 10. Architectural Room Labels
     # --------------------------------------------------------------------------
     f3.add_label("FLOOR 3 - MAIN LEVEL", 350, 1110, z=0.05, size=28.0)
     f3.add_label("KITCHEN", 175, 780)
@@ -244,7 +284,8 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     f3.add_label("BATH", 115, 365, size=20.0)
     f3.add_label("BEDROOM", 538, 310)
     f3.add_label("BALCONY", 538, 60, size=18.0)
-    f3.add_label("OPENING 155", 77, 565, size=14.0, mat_key="dim")
+    # Centered in the clear passage between the kitchen run front (x=67.5) and the utility stub (x=155)
+    f3.add_label("OPENING 155", 111, 565, size=12.0, mat_key="dim")
 
     f3.build_geometry()
     return f3

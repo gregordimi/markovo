@@ -660,6 +660,32 @@ def create_materials() -> dict:
             metallic=0.92,
         ),
 
+        # Kitchen Joinery: birch plywood carcasses with exposed edges, olive green inset fronts,
+        # light solid wood worktop, stainless sink, black glass hob and oven
+        "kitchen_plywood": make_pbr_material(
+            "Kitchen_Birch_Plywood_Mat",
+            (0.78, 0.60, 0.37, 1.0),  # Pale birch plywood, clear matte finish
+            roughness=0.55,
+        ),
+        "kitchen_olive": make_pbr_material(
+            "Kitchen_Olive_Front_Mat",
+            (0.159, 0.195, 0.060, 1.0),  # Olive green linoleum / matte laminate
+            roughness=0.6,
+        ),
+        "kitchen_worktop": make_pbr_material(
+            "Kitchen_Light_Wood_Worktop_Mat",
+            (0.66, 0.46, 0.24, 1.0),  # Light oiled solid wood (ash / birch / white oak)
+            roughness=0.45,
+        ),
+        "kitchen_steel": make_pbr_material(
+            "Kitchen_Stainless_Steel_Mat",
+            (0.80, 0.80, 0.80, 1.0),
+            roughness=0.28,
+            metallic=0.95,
+        ),
+        "kitchen_black_glass": make_pbr_material("Kitchen_Black_Glass_Mat", (0.015, 0.015, 0.015, 1.0), roughness=0.08),
+        "kitchen_hob_ring": make_pbr_material("Kitchen_Hob_Ring_Mat", (0.22, 0.22, 0.22, 1.0), roughness=0.3),
+
         # Annotation & Presentation
         "text": make_pbr_material("Text_Mat", (0.08, 0.08, 0.08, 1.0), roughness=0.4),
         "dim": make_pbr_material("Dim_Mat", (0.0, 0.33, 0.65, 1.0), roughness=0.4),

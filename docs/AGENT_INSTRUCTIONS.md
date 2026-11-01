@@ -35,6 +35,7 @@ markovo/
         ├── config.py                        # Units, architectural heights, settings
         ├── materials.py                     # Procedural & PBR material library
         ├── geometry.py                      # 3D CAD mesh primitives & fixtures
+        ├── kitchen.py                       # Kitchen joinery runs (carcasses, fronts, worktop)
         ├── builder.py                       # FloorPlanBuilder engine (cutouts & slabs)
         ├── floor3.py                        # Floor 3 (Main Level) declarative data
         ├── floor4.py                        # Floor 4 (Attic Level) declarative data
@@ -48,6 +49,7 @@ markovo/
 | [`config.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/config.py) | Defines `CM = 0.01` conversion factor, vertical levels (`WALL_HEIGHT`, `SLAB_THICK`, `DOOR_HEIGHT`, `WIN_SILL`, `WIN_TOP`, `TERRACE_PARAPET_HEIGHT`, `TERRACE_COPING_THICKNESS`), and layout flags (`STACK_FLOORS`). |
 | [`materials.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/materials.py) | Central material factory: procedural clay tiles, parallel light parquet, cement mosaic terrazzo, white uPVC, stone coping, and PBR shaders. |
 | [`geometry.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/geometry.py) | Low-level mesh geometry: `create_prism_from_quad`, `create_extruded_polygon`, `wall_quad`, uPVC windows, doors with swing arcs, stairs, solid terrace parapets, and coping. |
+| [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/kitchen.py) | Kitchen runs along a wall face: birch plywood carcasses with exposed edges, olive inset doors/drawers, recessed plinth, solid wood worktop sliced around the sink basin, hob, oven front, tall fridge housing. |
 | [`builder.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py) | [`FloorPlanBuilder`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py#L40) class: manages object collections, root empties, automated collinear wall opening cutouts, lintels, sills, and room finishes. |
 | [`floor3.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor3.py) | Declarative floor specification for Floor 3 (rooms, walls, openings, stairs, balconies). |
 | [`floor4.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor4.py) | Declarative floor specification for Floor 4 Attic. |
@@ -104,6 +106,12 @@ Materials are defined in [`scripts/cad_markovo/materials.py`](file:///Users/gdim
 | `"void"` | `Roof_Void_Mat` | PBR Neutral Void | Attic Unusable Roof Void Area |
 | `"bath_tiles"` | `Bath_Tiles_Mat` | PBR Semi-Gloss Ceramic | Bathroom Floor Slab |
 | `"shaft"` | `Shaft_Mat` | PBR Plaster | Bathroom Plumbing/Ventilation Shaft |
+| `"kitchen_plywood"` | `Kitchen_Birch_Plywood_Mat` | PBR Matte Birch | Kitchen carcasses, plinths, exposed front edges |
+| `"kitchen_olive"` | `Kitchen_Olive_Front_Mat` | PBR Matte Olive | Kitchen inset door and drawer front faces |
+| `"kitchen_worktop"` | `Kitchen_Light_Wood_Worktop_Mat` | PBR Light Wood | Kitchen worktops (4 cm, 60 deep) |
+| `"kitchen_steel"` | `Kitchen_Stainless_Steel_Mat` | PBR Brushed Steel | Sink basin and tap |
+| `"kitchen_black_glass"` | `Kitchen_Black_Glass_Mat` | PBR Gloss Black | Hob glass and oven front |
+| `"kitchen_hob_ring"` | `Kitchen_Hob_Ring_Mat` | PBR Dark Gray | Hob cooking zone rings |
 
 ---
 
@@ -224,6 +232,22 @@ f3.add_stairs(
 )
 ```
 *Rule: Stairs automatically use `cement_mosaic` for all treads and risers.*
+
+### 5.6 Adding a Kitchen Run
+```python
+f3.add_kitchen_run(
+    origin=(7.5, 513),   # run start on the wall face (cm)
+    along=(0, 1),        # unit vector along the wall
+    out=(1, 0),          # unit vector into the room
+    units=[{"kind": "hob_oven", "width": 60}, {"kind": "drawers", "width": 50}],
+    worktop_start=2.0,   # optional: trim where it meets a corner worktop
+    plinth_start=-5.0,   # optional: extend to meet a corner plinth
+    end_panel=True,      # optional: plywood foot panel at a free end
+    id="kitchen_wall_run",
+    room="Kitchen",
+)
+```
+*Unit kinds: `blind`, `door`, `double_door`, `drawers`, `filler`, `sink`, `hob_oven`, `tall_fridge`. Heights and depths come from the `KITCHEN_*` constants in `config.py`.*
 
 ---
 
