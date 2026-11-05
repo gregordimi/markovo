@@ -1,0 +1,208 @@
+<?xml version='1.0' encoding='utf-8'?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <unit name="meter" meter="1" />
+    <up_axis>Z_UP</up_axis>
+  </asset>
+  <library_geometries>
+    <geometry id="geom-Util_Floor_Slab" name="Util_Floor_Slab">
+      <mesh>
+        <source id="geom-Util_Floor_Slab-pos">
+          <float_array id="geom-Util_Floor_Slab-pos-arr" count="24">0.000000 4.500000 -0.150000 2.300000 4.500000 -0.150000 2.300000 5.500000 -0.150000 0.000000 5.500000 -0.150000 0.000000 4.500000 0.000000 2.300000 4.500000 0.000000 2.300000 5.500000 0.000000 0.000000 5.500000 0.000000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Floor_Slab-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Floor_Slab-v">
+          <input semantic="POSITION" source="#geom-Util_Floor_Slab-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Floor_Slab-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-Util_Wall_South_Bath" name="Util_Wall_South_Bath">
+      <mesh>
+        <source id="geom-Util_Wall_South_Bath-pos">
+          <float_array id="geom-Util_Wall_South_Bath-pos-arr" count="24">0.000000 4.400000 0.000000 2.300000 4.400000 0.000000 2.300000 4.500000 0.000000 0.000000 4.500000 0.000000 0.000000 4.400000 2.800000 2.300000 4.400000 2.800000 2.300000 4.500000 2.800000 0.000000 4.500000 2.800000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Wall_South_Bath-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Wall_South_Bath-v">
+          <input semantic="POSITION" source="#geom-Util_Wall_South_Bath-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Wall_South_Bath-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-Util_Wall_East_Hallway" name="Util_Wall_East_Hallway">
+      <mesh>
+        <source id="geom-Util_Wall_East_Hallway-pos">
+          <float_array id="geom-Util_Wall_East_Hallway-pos-arr" count="24">2.300000 4.500000 0.000000 2.400000 4.500000 0.000000 2.400000 5.500000 0.000000 2.300000 5.500000 0.000000 2.300000 4.500000 2.800000 2.400000 4.500000 2.800000 2.400000 5.500000 2.800000 2.300000 5.500000 2.800000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Wall_East_Hallway-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Wall_East_Hallway-v">
+          <input semantic="POSITION" source="#geom-Util_Wall_East_Hallway-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Wall_East_Hallway-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-Util_Wall_North_Stub" name="Util_Wall_North_Stub">
+      <mesh>
+        <source id="geom-Util_Wall_North_Stub-pos">
+          <float_array id="geom-Util_Wall_North_Stub-pos-arr" count="24">1.550000 5.500000 0.000000 2.300000 5.500000 0.000000 2.300000 5.600000 0.000000 1.550000 5.600000 0.000000 1.550000 5.500000 2.800000 2.300000 5.500000 2.800000 2.300000 5.600000 2.800000 1.550000 5.600000 2.800000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Wall_North_Stub-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Wall_North_Stub-v">
+          <input semantic="POSITION" source="#geom-Util_Wall_North_Stub-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Wall_North_Stub-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-Util_Wall_West_Low" name="Util_Wall_West_Low">
+      <mesh>
+        <source id="geom-Util_Wall_West_Low-pos">
+          <float_array id="geom-Util_Wall_West_Low-pos-arr" count="24">-0.150000 4.500000 0.000000 0.000000 4.500000 0.000000 0.000000 4.650000 0.000000 -0.150000 4.650000 0.000000 -0.150000 4.500000 2.800000 0.000000 4.500000 2.800000 0.000000 4.650000 2.800000 -0.150000 4.650000 2.800000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Wall_West_Low-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Wall_West_Low-v">
+          <input semantic="POSITION" source="#geom-Util_Wall_West_Low-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Wall_West_Low-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-Util_Wall_West_Sill" name="Util_Wall_West_Sill">
+      <mesh>
+        <source id="geom-Util_Wall_West_Sill-pos">
+          <float_array id="geom-Util_Wall_West_Sill-pos-arr" count="24">-0.150000 4.650000 0.000000 0.000000 4.650000 0.000000 0.000000 5.350000 0.000000 -0.150000 5.350000 0.000000 -0.150000 4.650000 1.000000 0.000000 4.650000 1.000000 0.000000 5.350000 1.000000 -0.150000 5.350000 1.000000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Wall_West_Sill-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Wall_West_Sill-v">
+          <input semantic="POSITION" source="#geom-Util_Wall_West_Sill-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Wall_West_Sill-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-Util_Wall_West_Lintel" name="Util_Wall_West_Lintel">
+      <mesh>
+        <source id="geom-Util_Wall_West_Lintel-pos">
+          <float_array id="geom-Util_Wall_West_Lintel-pos-arr" count="24">-0.150000 4.650000 2.100000 0.000000 4.650000 2.100000 0.000000 5.350000 2.100000 -0.150000 5.350000 2.100000 -0.150000 4.650000 2.800000 0.000000 4.650000 2.800000 0.000000 5.350000 2.800000 -0.150000 5.350000 2.800000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Wall_West_Lintel-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Wall_West_Lintel-v">
+          <input semantic="POSITION" source="#geom-Util_Wall_West_Lintel-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Wall_West_Lintel-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-Util_Wall_West_High" name="Util_Wall_West_High">
+      <mesh>
+        <source id="geom-Util_Wall_West_High-pos">
+          <float_array id="geom-Util_Wall_West_High-pos-arr" count="24">-0.150000 5.350000 0.000000 0.000000 5.350000 0.000000 0.000000 5.500000 0.000000 -0.150000 5.500000 0.000000 -0.150000 5.350000 2.800000 0.000000 5.350000 2.800000 0.000000 5.500000 2.800000 -0.150000 5.500000 2.800000</float_array>
+          <technique_common>
+            <accessor source="#geom-Util_Wall_West_High-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-Util_Wall_West_High-v">
+          <input semantic="POSITION" source="#geom-Util_Wall_West_High-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-Util_Wall_West_High-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="Scene" name="Scene">
+      <node id="Util_Floor_Slab" name="Util_Floor_Slab">
+        <instance_geometry url="#geom-Util_Floor_Slab" />
+      </node>
+      <node id="Util_Wall_South_Bath" name="Util_Wall_South_Bath">
+        <instance_geometry url="#geom-Util_Wall_South_Bath" />
+      </node>
+      <node id="Util_Wall_East_Hallway" name="Util_Wall_East_Hallway">
+        <instance_geometry url="#geom-Util_Wall_East_Hallway" />
+      </node>
+      <node id="Util_Wall_North_Stub" name="Util_Wall_North_Stub">
+        <instance_geometry url="#geom-Util_Wall_North_Stub" />
+      </node>
+      <node id="Util_Wall_West_Low" name="Util_Wall_West_Low">
+        <instance_geometry url="#geom-Util_Wall_West_Low" />
+      </node>
+      <node id="Util_Wall_West_Sill" name="Util_Wall_West_Sill">
+        <instance_geometry url="#geom-Util_Wall_West_Sill" />
+      </node>
+      <node id="Util_Wall_West_Lintel" name="Util_Wall_West_Lintel">
+        <instance_geometry url="#geom-Util_Wall_West_Lintel" />
+      </node>
+      <node id="Util_Wall_West_High" name="Util_Wall_West_High">
+        <instance_geometry url="#geom-Util_Wall_West_High" />
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene" />
+  </scene>
+</COLLADA>

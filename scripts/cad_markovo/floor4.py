@@ -190,5 +190,12 @@ def build_floor_4(
     f4.add_dimension(700, 918, 700, 120, offset_cm=55, side="left", id="dim_attic_party_wall_east")
     f4.add_dimension(700, 120, 360, 120, offset_cm=55, side="left", id="dim_attic_office_south")
 
+    # --------------------------------------------------------------------------
+    # 8. Modular Room Furniture (Attic Office, Attic Bedroom)
+    # --------------------------------------------------------------------------
+    from furniture import attic_office, attic_bedroom
+    attic_office.build_office_furniture(f4.col, attic_office.create_materials(), parent=f4.root)
+    attic_bedroom.build_attic_bedroom_furniture(f4.col, attic_bedroom.create_materials(), parent=f4.root, include_balustrade=False)
+
     f4.build_geometry()
     return f4

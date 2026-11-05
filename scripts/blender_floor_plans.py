@@ -280,7 +280,8 @@ def main():
         print(f"\n[Render] Rendering {len(unique_views)} view(s) via Cycles CPU...")
         for cam_name in unique_views:
             clean_name = cam_name.lower().replace("camera_", "")
-            view_out = RENDER_DIR / f"markovo_{clean_name}.png"
+            suffix = "_stacked" if STACK_FLOORS else ""
+            view_out = RENDER_DIR / f"markovo_{clean_name}{suffix}.png"
             scene.render_to_file(view_out, camera_name=cam_name, resolution=(1920, 1080))
 
     print("\n[Done] Pipeline execution finished successfully!")

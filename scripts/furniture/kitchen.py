@@ -4,12 +4,17 @@ MARKOVO FURNITURE — KITCHEN JOINERY & BUILT-IN APPLIANCES
 ==============================================================================
 
 Self-contained module defining the kitchen joinery, cabinetry, and appliances.
-Designed for both:
+Designed for:
   1. Isolated Prototyping & Standalone Studio Rendering:
      /Applications/Blender.app/Contents/MacOS/Blender --python scripts/furniture/kitchen.py
      /Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/furniture/kitchen.py -- --render
+     /Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/furniture/kitchen.py -- --render --view iso
 
-  2. Architectural Floor Plan Integration:
+  2. Automated Cutlist & Bill of Materials (BOM) Generation:
+     python3 scripts/furniture/kitchen.py --cutlist
+     /Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/furniture/kitchen.py -- --cutlist
+
+  3. Architectural Floor Plan Integration:
      from furniture.kitchen import build_kitchen, DEFAULT_KITCHEN_UNITS
 ==============================================================================
 """
@@ -17,17 +22,27 @@ Designed for both:
 import sys
 import os
 import math
+import csv
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 # Ensure parent directory (scripts/) is in sys.path when run directly
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-import bpy
-import bmesh
-from mathutils import Vector, Matrix
+# Graceful import for Blender environment
+try:
+    import bpy
+    import bmesh
+    from mathutils import Vector, Matrix
+    HAS_BLENDER = True
+except ImportError:
+    HAS_BLENDER = False
+    bpy = None
+    bmesh = None
+    Vector = None
+    Matrix = None
 
 # Units
 CM = 0.01  # 1 cm = 0.01 m
@@ -62,8 +77,10 @@ DEFAULT_KITCHEN_UNITS = [
 # ------------------------------------------------------------------------------
 # 3. PBR KITCHEN MATERIALS FACTORY
 # ------------------------------------------------------------------------------
-def get_or_create_material(name: str) -> bpy.types.Material:
+def get_or_create_material(name: str):
     """Gets an existing material or creates a clean node-based material."""
+    if not HAS_BLENDER:
+        return None
     if name in bpy.data.materials:
         return bpy.data.materials[name]
     mat = bpy.data.materials.new(name=name)
@@ -71,8 +88,10 @@ def get_or_create_material(name: str) -> bpy.types.Material:
     return mat
 
 
-def create_kitchen_materials() -> Dict[str, bpy.types.Material]:
+def create_kitchen_materials() -> Dict[str, Any]:
     """Creates all PBR materials required for the kitchen cabinetry and appliances."""
+    if not HAS_BLENDER:
+        return {}
     mats = {}
 
     # 1. Birch Plywood (Carcasses, Exposed Edges, Plinth)
@@ -128,8 +147,10 @@ def create_kitchen_materials() -> Dict[str, bpy.types.Material]:
     return mats
 
 
-def resolve_kitchen_materials(mats: Dict[str, bpy.types.Material] = None) -> Dict[str, bpy.types.Material]:
+def resolve_kitchen_materials(mats: Dict[str, Any] = None) -> Dict[str, Any]:
     """Resolves material dict mapping from either cad_markovo materials or standalone."""
+    if not HAS_BLENDER:
+        return {}
     if mats is None:
         mats = {}
 
@@ -174,10 +195,10 @@ def _create_prism(
     corners_2d: List[Tuple[float, float]],
     z0: float,
     z1: float,
-    mat: bpy.types.Material,
-    col: bpy.types.Collection,
-    parent: bpy.types.Object = None,
-) -> bpy.types.Object:
+    mat: Any,
+    col: Any,
+    parent: Any = None,
+):
     """Creates a 3D prism from 4 (x, y) coordinates in cm and Z bounds in meters."""
     mesh = bpy.data.meshes.new(name)
     bm = bmesh.new()
@@ -210,11 +231,11 @@ def _create_box(
     s0: float, s1: float,
     t0: float, t1: float,
     z0: float, z1: float,
-    mat: bpy.types.Material,
-    col: bpy.types.Collection,
-    parent: bpy.types.Object = None,
-    front_mat: bpy.types.Material = None,
-) -> bpy.types.Object:
+    mat: Any,
+    col: Any,
+    parent: Any = None,
+    front_mat: Any = None,
+):
     """Creates a run-aligned box. If front_mat is provided, the front face uses it."""
     obj = _create_prism(name, frame.quad(s0, s1, t0, t1), z0, z1, mat, col, parent)
     if front_mat is not None:
@@ -230,11 +251,11 @@ def _create_cylinder(
     p_bottom: Tuple[float, float, float],
     p_top: Tuple[float, float, float],
     radius_cm: float,
-    mat: bpy.types.Material,
-    col: bpy.types.Collection,
-    parent: bpy.types.Object = None,
+    mat: Any,
+    col: Any,
+    parent: Any = None,
     segments: int = 24,
-) -> bpy.types.Object:
+):
     """Creates a cylinder between two 3D points (in meters) with radius in cm."""
     v1 = Vector(p_bottom)
     v2 = Vector(p_top)
@@ -417,18 +438,21 @@ def build_kitchen(
     along: Tuple[float, float] = (0.0, 1.0),
     out: Tuple[float, float] = (1.0, 0.0),
     units: List[dict] = None,
-    col: bpy.types.Collection = None,
-    parent: bpy.types.Object = None,
-    mats: Dict[str, bpy.types.Material] = None,
+    col: Any = None,
+    parent: Any = None,
+    mats: Dict[str, Any] = None,
     worktop_start: float = None,
     plinth_start: float = 0.0,
     end_panel: bool = True,
     name_prefix: str = "Kitchen_Run",
-) -> bpy.types.Object:
+):
     """
     Builds the complete linear kitchen furniture run.
     Can be called standalone or imported into Floor 3 / FloorPlanBuilder.
     """
+    if not HAS_BLENDER:
+        raise RuntimeError("Blender environment (bpy) is required to build 3D mesh geometry.")
+
     if units is None:
         units = DEFAULT_KITCHEN_UNITS
 
@@ -543,52 +567,69 @@ def build_kitchen(
 
 
 # ------------------------------------------------------------------------------
-# 7. STANDALONE STUDIO RUNNER (FOR ISOLATED DEV & RENDERING)
+# 7. STANDALONE STUDIO RIG & MULTI-VIEW CAMERAS
 # ------------------------------------------------------------------------------
-def setup_kitchen_studio(kitchen_root: bpy.types.Object):
-    """Sets up an isolated, high-end architectural studio lighting and camera rig."""
+def setup_kitchen_studio(kitchen_root: Any, view: str = "front"):
+    """
+    Sets up an isolated, high-end architectural studio lighting and camera rig.
+    Supports multiple framing views:
+      - 'front': Wide front elevation showing the complete 4.4m run from distance
+      - 'iso'  : Wide 3/4 axonometric perspective view
+      - 'close': Intimate 3/4 view focused on prep and hob zone
+    """
+    if not HAS_BLENDER:
+        return
+
     col = bpy.data.collections.new("Kitchen_Studio")
     bpy.context.scene.collection.children.link(col)
 
-    # 1. Key Studio Softbox
+    # 1. Key Studio Softbox (Wide enough to softly illuminate entire 4.4m run)
     key_light = bpy.data.lights.new("Studio_Key", "AREA")
-    key_light.energy = 180.0
-    key_light.size = 2.5
-    key_light.size_y = 1.5
+    key_light.energy = 260.0
+    key_light.size = 5.0
+    key_light.size_y = 2.2
     key_obj = bpy.data.objects.new("Studio_Key", key_light)
-    key_obj.location = (2.2, 2.2, 2.8)
-    key_obj.rotation_euler = (math.radians(45.0), math.radians(15.0), math.radians(45.0))
+    key_obj.location = (3.2, 2.2, 3.2)
+    key_obj.rotation_euler = (math.radians(40.0), math.radians(0.0), math.radians(65.0))
     col.objects.link(key_obj)
 
     # 2. Fill Light
     fill_light = bpy.data.lights.new("Studio_Fill", "AREA")
-    fill_light.energy = 80.0
-    fill_light.size = 3.0
+    fill_light.energy = 120.0
+    fill_light.size = 4.5
     fill_obj = bpy.data.objects.new("Studio_Fill", fill_light)
-    fill_obj.location = (2.0, -1.5, 2.0)
-    fill_obj.rotation_euler = (math.radians(30.0), math.radians(-25.0), math.radians(110.0))
+    fill_obj.location = (3.0, -1.8, 2.4)
+    fill_obj.rotation_euler = (math.radians(30.0), math.radians(-20.0), math.radians(110.0))
     col.objects.link(fill_obj)
 
-    # 3. Dedicated Camera Framed directly on the Kitchen Joinery
+    # 3. Framing Camera presets
     cam_data = bpy.data.cameras.new("Kitchen_Studio_Camera")
     cam_data.lens = 28.0
     cam_data.sensor_width = 36.0
     cam_obj = bpy.data.objects.new("Kitchen_Studio_Camera", cam_data)
-    #cam_obj.location = (2.6, 2.2, 1.45)
 
-    # Track target at the center of the kitchen run (hob & prep zone)
-    #target = Vector((0.35, 2.2, 0.95))
-    cam_obj.location = (4.8, 2.2, 1.5)
-    target = Vector((0.3, 2.2, 1.05))
+    if view == "iso":
+        # Wide 3/4 perspective showing side panel, worktop surface, and all fronts
+        cam_obj.location = (4.5, -0.8, 2.2)
+        target = Vector((0.3, 2.2, 0.95))
+    elif view == "close":
+        # Detail view on hob & prep
+        cam_obj.location = (2.6, 2.2, 1.45)
+        target = Vector((0.35, 2.2, 0.95))
+    else:
+        # Default: Full-length front elevation (camera placed at 4.8m so full 4.4m fits comfortably)
+        cam_obj.location = (4.8, 2.2, 1.45)
+        target = Vector((0.3, 2.2, 1.05))
+
     direction = target - cam_obj.location
     cam_obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
     col.objects.link(cam_obj)
     bpy.context.scene.camera = cam_obj
 
-    # Studio Floor Plane
+    # Studio Floor Plane (Large 14m seamless plane)
     floor_mesh = bpy.data.meshes.new("Studio_Floor")
     bm = bmesh.new()
-    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=8.0)
+    bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=14.0)
     bm.to_mesh(floor_mesh)
     bm.free()
     floor_obj = bpy.data.objects.new("Studio_Floor", floor_mesh)
@@ -603,57 +644,527 @@ def setup_kitchen_studio(kitchen_root: bpy.types.Object):
     col.objects.link(floor_obj)
 
 
+# ------------------------------------------------------------------------------
+# 8. CUTLIST & BILL OF MATERIALS (BOM) GENERATOR
+# ------------------------------------------------------------------------------
+def generate_kitchen_cutlist(units: List[dict] = None) -> Dict[str, Any]:
+    """
+    Computes exact, shop-ready cutlist dimensions (in mm) for all cabinetry panels,
+    fronts, drawer boxes, solid wood worktops, hardware, and appliances.
+    """
+    if units is None:
+        units = DEFAULT_KITCHEN_UNITS
+
+    # Standard panel thickness & gaps in mm
+    T = int(PANEL_THICKNESS * 10)                        # 18 mm
+    GAP = int(FRONT_GAP * 10)                            # 3 mm
+    PLINTH_H = int(PLINTH_HEIGHT * 1000)                # 100 mm
+    H_BASE = int((CARCASS_TOP - PLINTH_HEIGHT) * 1000)    # 760 mm
+    H_TALL = int((TALL_TOP - PLINTH_HEIGHT) * 1000)       # 2000 mm
+    D_CARCASS = int(CARCASS_DEPTH * 10)                  # 600 mm
+    D_CAB = D_CARCASS - 20                               # 580 mm (standard 20mm service void)
+    WORKTOP_T = int((WORKTOP_TOP - CARCASS_TOP) * 1000)  # 40 mm
+    WORKTOP_D = int(WORKTOP_DEPTH * 10)                  # 635 mm
+
+    panels = []
+    hardware = []
+    appliances = []
+
+    def add_panel(name, cabinet, length, width, thick, qty, material, banding="", notes=""):
+        panels.append({
+            "name": name,
+            "cabinet": cabinet,
+            "length_mm": int(length),
+            "width_mm": int(width),
+            "thickness_mm": int(thick),
+            "qty": int(qty),
+            "material": material,
+            "banding": banding,
+            "notes": notes,
+            "area_m2": (float(length) * float(width) * int(qty)) / 1e6,
+        })
+
+    def add_hardware(item, qty, unit_name, category, notes=""):
+        hardware.append({
+            "item": item,
+            "qty": qty,
+            "unit": unit_name,
+            "category": category,
+            "notes": notes,
+        })
+
+    total_len_mm = 0
+    worktop_start_mm = 0
+
+    for idx, u in enumerate(units, start=1):
+        kind = u["kind"]
+        w_mm = int(float(u["width"]) * 10)  # cm to mm
+        u_label = f"Unit {idx:02d} ({u['label']})"
+        inner_w = w_mm - 2 * T  # Carcass inner width between sides
+        front_w = inner_w - 2 * GAP  # Inset front width
+
+        if kind == "tall_fridge":
+            worktop_start_mm = total_len_mm + w_mm
+            # Carcass
+            add_panel("Tall_Side_Left", u_label, H_TALL, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Tall carcass side")
+            add_panel("Tall_Side_Right", u_label, H_TALL, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Tall carcass side")
+            add_panel("Tall_Top", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Top roof panel")
+            add_panel("Tall_Bottom", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Bottom base panel")
+            add_panel("Tall_Divider_Shelf", u_label, inner_w, D_CAB - 20, T, 1, "Birch Plywood 18mm", "Front (1L)", "Fridge/freezer divider")
+            add_panel("Tall_Back_Stiffener", u_label, inner_w, 120, T, 2, "Birch Plywood 18mm", "None", "Rear ventilation rails")
+
+            # Fronts (Inset)
+            h_btm_front = int((0.85 - PLINTH_HEIGHT) * 1000) - 2 * GAP   # 744 mm
+            h_top_front = int((TALL_TOP - 0.85) * 1000) - 2 * GAP        # 1244 mm
+            add_panel("Front_Freezer_Door", u_label, h_btm_front, front_w, T, 1, "Olive Faced 18mm", "All 4 Edges", "Freezer inset door")
+            add_panel("Front_Fridge_Door", u_label, h_top_front, front_w, T, 1, "Olive Faced 18mm", "All 4 Edges", "Fridge inset door")
+
+            # Hardware & Appliances
+            add_hardware("Integrated Fridge Slider Kits / Heavy Inset Hinges", 4, "pcs", "Hinges", "Heavy-duty for integrated fridge doors")
+            add_hardware("Stainless Steel Bar Handle 400mm", 1, "pcs", "Handles", "Upper fridge door handle")
+            add_hardware("Stainless Steel Bar Handle 250mm", 1, "pcs", "Handles", "Lower freezer door handle")
+            add_hardware("Adjustable Cabinet Feet 100mm", 4, "pcs", "Legs", "Heavy duty 250kg load rating")
+            appliances.append({"item": "Built-in Integrated 60cm Fridge-Freezer", "brand_spec": "Standard 178cm niche", "qty": 1})
+
+        elif kind == "drawers":
+            # Carcass
+            add_panel("Base_Side_Left", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Base_Side_Right", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Base_Bottom", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Bottom panel")
+            add_panel("Base_Top_Stretcher", u_label, inner_w, 80, T, 2, "Birch Plywood 18mm", "None", "Top tie stretchers")
+            add_panel("Base_Back_Panel", u_label, H_BASE - 20, inner_w, 6, 1, "Birch Plywood 6mm", "None", "Rebated back panel")
+
+            # Fronts: 1 Shallow cutlery drawer, 2 deep drawers
+            h_top_drawer = 150 - 2 * GAP     # 144 mm
+            h_deep_drawer = int((H_BASE - 150) / 2) - 2 * GAP  # 299 mm
+            add_panel("Front_Shallow_Drawer", u_label, h_top_drawer, front_w, T, 1, "Olive Faced 18mm", "All 4 Edges", "Top cutlery drawer")
+            add_panel("Front_Deep_Drawer", u_label, h_deep_drawer, front_w, T, 2, "Olive Faced 18mm", "All 4 Edges", "Pots & pans / prep drawers")
+
+            # Drawer Boxes (15mm Birch Plywood sides/ends, 6mm bottom)
+            add_panel("Box_Shallow_Side", u_label, 500, 90, 15, 2, "Birch Plywood 15mm", "Top (1L)", "Drawer box sides")
+            add_panel("Box_Shallow_End", u_label, inner_w - 70, 90, 15, 2, "Birch Plywood 15mm", "Top (1L)", "Drawer box front/back")
+            add_panel("Box_Shallow_Bottom", u_label, 500, inner_w - 56, 6, 1, "Birch Plywood 6mm", "None", "Grooved bottom panel")
+
+            add_panel("Box_Deep_Side", u_label, 500, 200, 15, 4, "Birch Plywood 15mm", "Top (1L)", "Deep drawer sides")
+            add_panel("Box_Deep_End", u_label, inner_w - 70, 200, 15, 4, "Birch Plywood 15mm", "Top (1L)", "Deep drawer front/back")
+            add_panel("Box_Deep_Bottom", u_label, 500, inner_w - 56, 6, 2, "Birch Plywood 6mm", "None", "Grooved bottom panel")
+
+            # Hardware
+            add_hardware("Undermount Soft-Close Slides 500mm", 3, "pairs", "Slides", "e.g. Blum Movento or Grass Dynapro")
+            add_hardware("Stainless Steel Bar Handle 250mm", 1, "pcs", "Handles", "Top cutlery drawer handle")
+            add_hardware("Stainless Steel Bar Handle 300mm", 2, "pcs", "Handles", "Deep drawer handles")
+            add_hardware("Adjustable Cabinet Feet 100mm", 4, "pcs", "Legs", "Heavy duty 250kg load rating")
+
+        elif kind == "sink":
+            # Carcass (open top with vertical stretchers)
+            add_panel("Sink_Side_Left", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Sink_Side_Right", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Sink_Bottom", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Bottom panel")
+            add_panel("Sink_Vertical_Stretcher", u_label, inner_w, 80, T, 2, "Birch Plywood 18mm", "Top (1L)", "Vertical rails for sink clearance")
+            add_panel("Sink_Back_Panel_Lower", u_label, 200, inner_w, 6, 1, "Birch Plywood 6mm", "None", "Partial back panel for plumbing trap")
+
+            # Front (Single inset door)
+            add_panel("Front_Sink_Door", u_label, H_BASE - 2 * GAP, front_w, T, 1, "Olive Faced 18mm", "All 4 Edges", "Inset sink cabinet door")
+
+            # Hardware & Sanitary
+            add_hardware("Concealed Inset Hinges 110° Soft-Close", 1, "pair", "Hinges", "e.g. Blum Clip-Top Blumotion")
+            add_hardware("Stainless Steel Bar Handle 250mm", 1, "pcs", "Handles", "Vertical door handle")
+            add_hardware("Adjustable Cabinet Feet 100mm", 4, "pcs", "Legs", "Heavy duty 250kg load rating")
+            appliances.append({"item": "Stainless Steel Under-mount Basin (440 x 380 x 200mm)", "brand_spec": "Brushed satin finish", "qty": 1})
+            appliances.append({"item": "Swan-neck Monobloc Kitchen Mixer Tap", "brand_spec": "Satin stainless steel", "qty": 1})
+            appliances.append({"item": "Pop-up Waste Strainer & P-Trap Kit", "brand_spec": "Standard 1.5 inch", "qty": 1})
+
+        elif kind == "door":
+            # Carcass (Dishwasher bay or food prep shelving cabinet)
+            add_panel("Base_Side_Left", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Base_Side_Right", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Base_Bottom", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Bottom panel")
+            add_panel("Base_Adjustable_Shelf", u_label, inner_w - 4, D_CAB - 30, T, 1, "Birch Plywood 18mm", "Front (1L)", "Adjustable shelf")
+            add_panel("Base_Top_Stretcher", u_label, inner_w, 80, T, 2, "Birch Plywood 18mm", "None", "Top tie stretchers")
+            add_panel("Base_Back_Panel", u_label, H_BASE - 20, inner_w, 6, 1, "Birch Plywood 6mm", "None", "Rebated back panel")
+
+            # Front
+            add_panel("Front_Cabinet_Door", u_label, H_BASE - 2 * GAP, front_w, T, 1, "Olive Faced 18mm", "All 4 Edges", "Inset prep / DW door")
+
+            # Hardware
+            add_hardware("Concealed Inset Hinges 110° Soft-Close", 1, "pair", "Hinges", "e.g. Blum Clip-Top Blumotion")
+            add_hardware("Stainless Steel Bar Handle 250mm", 1, "pcs", "Handles", "Vertical door handle")
+            add_hardware("Adjustable Cabinet Feet 100mm", 4, "pcs", "Legs", "Heavy duty 250kg load rating")
+
+        elif kind == "hob_oven":
+            # Carcass
+            add_panel("Oven_Side_Left", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Oven_Side_Right", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Oven_Bottom", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Bottom panel")
+            add_panel("Oven_Support_Shelf", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Reinforced shelf supporting oven")
+            add_panel("Oven_Top_Stretcher", u_label, inner_w, 80, T, 2, "Birch Plywood 18mm", "None", "Top stretchers")
+
+            # Front (Lower low drawer for baking trays)
+            h_oven_draw = 120 - 2 * GAP
+            add_panel("Front_Oven_Lower_Drawer", u_label, h_oven_draw, front_w, T, 1, "Olive Faced 18mm", "All 4 Edges", "Baking tray drawer front")
+
+            # Low Drawer Box
+            add_panel("Box_Tray_Side", u_label, 500, 70, 15, 2, "Birch Plywood 15mm", "Top (1L)", "Low drawer sides")
+            add_panel("Box_Tray_End", u_label, inner_w - 70, 70, 15, 2, "Birch Plywood 15mm", "Top (1L)", "Low drawer front/back")
+            add_panel("Box_Tray_Bottom", u_label, 500, inner_w - 56, 6, 1, "Birch Plywood 6mm", "None", "Grooved bottom panel")
+
+            # Hardware & Appliances
+            add_hardware("Undermount Soft-Close Slides 500mm (Low Profile)", 1, "pair", "Slides", "Drawer under oven")
+            add_hardware("Stainless Steel Bar Handle 400mm", 1, "pcs", "Handles", "Oven handle / lower drawer")
+            add_hardware("Adjustable Cabinet Feet 100mm", 4, "pcs", "Legs", "Heavy duty 250kg load rating")
+            appliances.append({"item": "60cm 4-Zone Induction Cooktop (Black Glass)", "brand_spec": "Cutout: 560 x 490mm", "qty": 1})
+            appliances.append({"item": "60cm Built-in Multifunction Electric Oven", "brand_spec": "Niche: 595 x 595 x 550mm", "qty": 1})
+
+        elif kind == "double_door":
+            # Carcass (80cm Pantry / Tableware)
+            add_panel("Pantry_Side_Left", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Pantry_Side_Right", u_label, H_BASE, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Base carcass side")
+            add_panel("Pantry_Bottom", u_label, inner_w, D_CAB, T, 1, "Birch Plywood 18mm", "Front (1L)", "Bottom panel")
+            add_panel("Pantry_Adjustable_Shelf", u_label, inner_w - 4, D_CAB - 30, T, 1, "Birch Plywood 18mm", "Front (1L)", "Wide pantry shelf")
+            add_panel("Pantry_Top_Stretcher", u_label, inner_w, 80, T, 2, "Birch Plywood 18mm", "None", "Top tie stretchers")
+            add_panel("Pantry_Back_Panel", u_label, H_BASE - 20, inner_w, 6, 1, "Birch Plywood 6mm", "None", "Rebated back panel")
+
+            # Fronts (Pair of doors)
+            single_door_w = int((inner_w - 3 * GAP) / 2)  # 376 mm
+            add_panel("Front_Pantry_Door_Pair", u_label, H_BASE - 2 * GAP, single_door_w, T, 2, "Olive Faced 18mm", "All 4 Edges", "Pantry inset door pair")
+
+            # Hardware
+            add_hardware("Concealed Inset Hinges 110° Soft-Close", 2, "pairs", "Hinges", "e.g. Blum Clip-Top Blumotion")
+            add_hardware("Stainless Steel Bar Handle 250mm", 2, "pcs", "Handles", "Vertical door handles")
+            add_hardware("Adjustable Cabinet Feet 100mm", 4, "pcs", "Legs", "Heavy duty 250kg load rating")
+
+        total_len_mm += w_mm
+
+    # --------------------------------------------------------------------------
+    # Plinth, Finished End Decor Panel & Solid Wood Worktop
+    # --------------------------------------------------------------------------
+    # Recessed Plinth (split into 2 manageable ~2.2m lengths)
+    add_panel("Plinth_Kickboard_A", "Plinth & Trim", 2200, PLINTH_H, T, 1, "Birch Plywood 18mm", "Top (1L)", "Recessed toe-kick board")
+    add_panel("Plinth_Kickboard_B", "Plinth & Trim", total_len_mm - 2200, PLINTH_H, T, 1, "Birch Plywood 18mm", "Top (1L)", "Recessed toe-kick board")
+    add_panel("Plinth_End_Return_Foot", "Plinth & Trim", D_CAB - 40, PLINTH_H, T, 1, "Birch Plywood 18mm", "Top/Front", "Free end foot panel")
+
+    # Exposed Finished End Decor Panel (Closes the free North end of the base run)
+    add_panel("Finished_End_Decor_Panel", "Plinth & Trim", H_BASE + PLINTH_H, D_CARCASS, T, 1, "Birch Plywood 18mm", "Front/Top (2E)", "Exposed North end panel")
+
+    # Solid Wood Worktop
+    worktop_len_mm = total_len_mm - worktop_start_mm
+    add_panel("Solid_Wood_Worktop", "Countertop", worktop_len_mm, WORKTOP_D, WORKTOP_T, 1, "Solid Wood Oak/Beech 40mm", "All 4 Edges Bullnose/Chamfer",
+              f"Continuous solid counter with Sink cutout (440x380mm) and Hob cutout (560x490mm)")
+
+    # Plinth Clips
+    add_hardware("Plinth Fastening Clips (to legs)", 12, "pcs", "Plinth", "Locks kickboard to 100mm legs")
+
+    # --------------------------------------------------------------------------
+    # Raw Sheet Material Stock Optimization Calculations
+    # --------------------------------------------------------------------------
+    SHEET_W = 2440
+    SHEET_H = 1220
+    SHEET_AREA = (SHEET_W * SHEET_H) / 1e6  # 2.977 m2
+
+    mat_areas = {}
+    for p in panels:
+        m = p["material"]
+        mat_areas[m] = mat_areas.get(m, 0.0) + p["area_m2"]
+
+    sheets_summary = {}
+    for m, area in mat_areas.items():
+        if "Solid Wood" in m:
+            sheets_summary[m] = {
+                "total_area_m2": round(area, 2),
+                "units_required": "1 slab (3800 x 635 x 40mm)",
+                "waste_factor": "10%",
+            }
+        else:
+            # 15% saw kerf & scrap allowance
+            raw_sheets = (area * 1.15) / SHEET_AREA
+            sheets_summary[m] = {
+                "total_area_m2": round(area, 2),
+                "sheets_2440x1220": math.ceil(raw_sheets),
+                "exact_sheets_calc": round(raw_sheets, 2),
+                "waste_factor": "15% kerf & offcut",
+            }
+
+    return {
+        "total_run_length_mm": total_len_mm,
+        "total_run_length_m": total_len_mm / 1000.0,
+        "panels": panels,
+        "hardware": hardware,
+        "appliances": appliances,
+        "material_summary": sheets_summary,
+    }
+
+
+def export_cutlist_csv(filepath: str, cutlist: Dict[str, Any] = None):
+    """
+    Exports the panels cutlist to a standard CSV directly compatible with
+    CutList Optimizer (cutlistoptimizer.com), Cutlist Plus fx, and Excel.
+    """
+    if cutlist is None:
+        cutlist = generate_kitchen_cutlist()
+
+    out_path = Path(filepath).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(out_path, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "Part Name",
+            "Cabinet",
+            "Length (mm)",
+            "Width (mm)",
+            "Thickness (mm)",
+            "Qty",
+            "Material",
+            "Edge Banding",
+            "Notes"
+        ])
+        for p in cutlist["panels"]:
+            writer.writerow([
+                p["name"],
+                p["cabinet"],
+                p["length_mm"],
+                p["width_mm"],
+                p["thickness_mm"],
+                p["qty"],
+                p["material"],
+                p["banding"],
+                p["notes"]
+            ])
+
+    return out_path
+
+
+def export_cutlist_markdown(filepath: str, cutlist: Dict[str, Any] = None):
+    """
+    Exports a comprehensive, formatted Bill of Materials (BOM) and Cutlist report in Markdown.
+    """
+    if cutlist is None:
+        cutlist = generate_kitchen_cutlist()
+
+    out_path = Path(filepath).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    lines = []
+    lines.append("# Markovo Kitchen — Shop Cutlist & Bill of Materials (BOM)")
+    lines.append(f"\n- **Total Kitchen Run Length**: {cutlist['total_run_length_mm']} mm ({cutlist['total_run_length_m']} m)")
+    lines.append(f"- **Finished Worktop Height**: 900 mm | **Base Carcass Depth**: 600 mm")
+    lines.append(f"- **Style**: Exposed Birch Plywood Carcasses + Inset Olive Green Fronts + 40mm Solid Wood Countertop\n")
+
+    lines.append("## 1. Raw Sheet Material Requirements (2440 x 1220 mm Boards)")
+    lines.append("| Material | Net Area (m²) | Waste Factor | Estimated Stock Required |")
+    lines.append("| :--- | :---: | :---: | :--- |")
+    for mat, info in cutlist["material_summary"].items():
+        if "sheets_2440x1220" in info:
+            lines.append(f"| **{mat}** | {info['total_area_m2']} m² | {info['waste_factor']} | **{info['sheets_2440x1220']} full sheets** ({info['exact_sheets_calc']} net) |")
+        else:
+            lines.append(f"| **{mat}** | {info['total_area_m2']} m² | {info['waste_factor']} | **{info['units_required']}** |")
+
+    lines.append("\n---\n")
+    lines.append("## 2. Complete Panel Cutlist (Sorted by Cabinet)")
+    lines.append("| Part Name | Cabinet / Unit | Length (mm) | Width (mm) | Thick (mm) | Qty | Material | Edge Banding | Notes |")
+    lines.append("| :--- | :--- | :---: | :---: | :---: | :---: | :--- | :--- | :--- |")
+    for p in cutlist["panels"]:
+        lines.append(f"| `{p['name']}` | {p['cabinet']} | {p['length_mm']} | {p['width_mm']} | {p['thickness_mm']} | {p['qty']} | {p['material']} | {p['banding']} | {p['notes']} |")
+
+    lines.append("\n---\n")
+    lines.append("## 3. Hardware & Fittings Shopping List")
+    lines.append("| Item Description | Quantity | Category | Notes / Suggested Brand |")
+    lines.append("| :--- | :---: | :--- | :--- |")
+    for h in cutlist["hardware"]:
+        lines.append(f"| {h['item']} | **{h['qty']} {h['unit']}** | {h['category']} | {h['notes']} |")
+
+    lines.append("\n---\n")
+    lines.append("## 4. Built-in Appliances & Sanitary Checklist")
+    lines.append("| Appliance / Fixture | Specification / Niche Dimensions | Qty | Status |")
+    lines.append("| :--- | :--- | :---: | :---: |")
+    for a in cutlist["appliances"]:
+        lines.append(f"| **{a['item']}** | {a['brand_spec']} | {a['qty']} | Pending Procurement |")
+
+    lines.append("\n---\n")
+    lines.append("> **CutList Optimizer Import Note**:\n> The companion CSV file [`renders/kitchen_cutlist.csv`](file:///Users/gdimitrov/projects/markovo/renders/kitchen_cutlist.csv) can be directly imported into [CutList Optimizer](https://www.cutlistoptimizer.com/) to calculate the exact saw layout on 2440x1220mm sheets.\n")
+
+    content = "\n".join(lines)
+    with open(out_path, mode="w", encoding="utf-8") as f:
+        f.write(content)
+
+    return out_path
+
+
+def print_cutlist_summary(cutlist: Dict[str, Any]):
+    """Prints a clean, concise ASCII summary of the cutlist to the terminal."""
+    print("\n" + "=" * 78)
+    print(f"  MARKOVO KITCHEN — BILL OF MATERIALS & CUTLIST SUMMARY ({cutlist['total_run_length_mm']} mm)")
+    print("=" * 78)
+    print("\n[Raw Material Stock Requirements (2440 x 1220 mm Sheets)]")
+    print(f"  {'Material':<32} {'Net Area':<12} {'Stock Required'}")
+    print("  " + "-" * 72)
+    for mat, info in cutlist["material_summary"].items():
+        if "sheets_2440x1220" in info:
+            print(f"  {mat:<32} {info['total_area_m2']} m2        {info['sheets_2440x1220']} sheets ({info['exact_sheets_calc']} net)")
+        else:
+            print(f"  {mat:<32} {info['total_area_m2']} m2        {info['units_required']}")
+
+    print("\n[Total Panels Count]:", len(cutlist["panels"]), "unique parts |", sum(p["qty"] for p in cutlist["panels"]), "total panels")
+    print("[Total Hardware Items]:", len(cutlist["hardware"]), "specifications")
+    print("[Appliances & Sanitary]:", len(cutlist["appliances"]), "items")
+    print("=" * 78 + "\n")
+
+
+def export_kitchen_dae(filepath: str):
+    """
+    Exports all kitchen objects to standard COLLADA 1.4.1 (.dae),
+    the native 3D file format that SketchUp imports out of the box.
+    """
+    import xml.etree.ElementTree as ET
+    out_path = Path(filepath).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    root = ET.Element("COLLADA", xmlns="http://www.collada.org/2005/11/COLLADASchema", version="1.4.1")
+    asset = ET.SubElement(root, "asset")
+    ET.SubElement(asset, "unit", name="meter", meter="1")
+    up = ET.SubElement(asset, "up_axis")
+    up.text = "Z_UP"
+
+    lib_geoms = ET.SubElement(root, "library_geometries")
+    lib_scenes = ET.SubElement(root, "library_visual_scenes")
+    vscene = ET.SubElement(lib_scenes, "visual_scene", id="Scene", name="Scene")
+
+    mesh_objects = [o for o in bpy.context.scene.objects if o.type == "MESH" and o.name.startswith("Kitchen_Run")]
+
+    for obj in mesh_objects:
+        mesh = obj.to_mesh()
+        clean_name = obj.name.replace(" ", "_").replace(".", "_")
+        geom_id = f"geom-{clean_name}"
+        geom = ET.SubElement(lib_geoms, "geometry", id=geom_id, name=obj.name)
+        mesh_elem = ET.SubElement(geom, "mesh")
+
+        # Vertices
+        pos_id = f"{geom_id}-positions"
+        source = ET.SubElement(mesh_elem, "source", id=pos_id)
+        verts = [v.co for v in mesh.vertices]
+        pos_array_id = f"{pos_id}-array"
+        pos_array = ET.SubElement(source, "float_array", id=pos_array_id, count=str(len(verts) * 3))
+        pos_array.text = " ".join(f"{v.x:.6f} {v.y:.6f} {v.z:.6f}" for v in verts)
+
+        tech = ET.SubElement(source, "technique_common")
+        accessor = ET.SubElement(tech, "accessor", source=f"#{pos_array_id}", count=str(len(verts)), stride="3")
+        ET.SubElement(accessor, "param", name="X", type="float")
+        ET.SubElement(accessor, "param", name="Y", type="float")
+        ET.SubElement(accessor, "param", name="Z", type="float")
+
+        vertices_elem = ET.SubElement(mesh_elem, "vertices", id=f"{geom_id}-vertices")
+        ET.SubElement(vertices_elem, "input", semantic="POSITION", source=f"#{pos_id}")
+
+        # Triangles
+        mesh.calc_loop_triangles()
+        tri_count = len(mesh.loop_triangles)
+        if tri_count > 0:
+            triangles = ET.SubElement(mesh_elem, "triangles", count=str(tri_count))
+            ET.SubElement(triangles, "input", semantic="VERTEX", source=f"#{geom_id}-vertices", offset="0")
+            p_elem = ET.SubElement(triangles, "p")
+            indices = []
+            for tri in mesh.loop_triangles:
+                indices.extend(tri.vertices)
+            p_elem.text = " ".join(str(idx) for idx in indices)
+
+        # Node in visual scene
+        node = ET.SubElement(vscene, "node", id=clean_name, name=obj.name)
+        ET.SubElement(node, "instance_geometry", url=f"#{geom_id}")
+
+        obj.to_mesh_clear()
+
+    scene_elem = ET.SubElement(root, "scene")
+    ET.SubElement(scene_elem, "instance_visual_scene", url="#Scene")
+
+    tree = ET.ElementTree(root)
+    ET.indent(tree, space="  ", level=0)
+    tree.write(out_path, encoding="utf-8", xml_declaration=True)
+    return out_path
+
+
+# ------------------------------------------------------------------------------
+# 9. CLI ENTRY POINT & RUNNER
+# ------------------------------------------------------------------------------
 def main():
-    print("\n" + "=" * 70)
-    print("  MARKOVO FURNITURE — KITCHEN STANDALONE STUDIO")
-    print("=" * 70)
+    # Parse CLI arguments
+    argv = sys.argv
+    is_cutlist = "--cutlist" in argv or "--bom" in argv
+    is_render = "--render" in argv
+    is_sketchup = "--sketchup" in argv or "--dae" in argv or "--export-dae" in argv or "--obj" in argv
 
-    # 1. Clean existing scene
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.object.delete(use_global=False)
-    for b in (bpy.data.meshes, bpy.data.materials, bpy.data.lights, bpy.data.cameras, bpy.data.collections):
-        for block in list(b):
-            b.remove(block)
+    # Determine view preset
+    view = "front"
+    for idx, arg in enumerate(argv):
+        if arg == "--view" and idx + 1 < len(argv):
+            view = argv[idx + 1]
 
-    # 2. Build Kitchen Run at origin (0, 0) running along Y
-    mats = create_kitchen_materials()
-    print("[1/2] Constructing Kitchen Joinery & Appliances...")
-    k_root = build_kitchen(
-        origin=(0.0, 0.0),
-        along=(0.0, 1.0),
-        out=(1.0, 0.0),
-        units=DEFAULT_KITCHEN_UNITS,
-        mats=mats,
-        end_panel=True,
-    )
-    print(f"      - Built {len(DEFAULT_KITCHEN_UNITS)} units (Total length: 440 cm):")
-    for u in DEFAULT_KITCHEN_UNITS:
-        print(f"        * {u['kind']:<15} {u['width']} cm ({u['label']})")
+    # Handle Cutlist Generation
+    if is_cutlist or not HAS_BLENDER:
+        cutlist = generate_kitchen_cutlist()
+        csv_path = export_cutlist_csv("renders/kitchen_cutlist.csv", cutlist)
+        md_path = export_cutlist_markdown("renders/kitchen_cutlist.md", cutlist)
+        print_cutlist_summary(cutlist)
+        print(f"[Cutlist] Exported CutList Optimizer CSV: {csv_path}")
+        print(f"[Cutlist] Exported Bill of Materials Markdown: {md_path}")
+        if not is_render and not HAS_BLENDER:
+            return
 
-    # 3. Studio Rig & Camera
-    print("[2/2] Setting up studio lighting and framed camera...")
-    setup_kitchen_studio(k_root)
+    # If Blender is present, execute 3D build / render
+    if HAS_BLENDER:
+        print("\n" + "=" * 70)
+        print("  MARKOVO FURNITURE — KITCHEN STANDALONE STUDIO")
+        print("=" * 70)
 
-    # Render if requested via '--render'
-    if "--render" in sys.argv:
-        out_path = Path("renders/kitchen_furniture_preview.png").resolve()
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-        print(f"\n[Render] Rendering studio preview to: {out_path}")
-        scene = bpy.context.scene
-        scene.render.engine = "CYCLES"
-        if hasattr(scene, "cycles"):
-            scene.cycles.device = "CPU"
-            scene.cycles.samples = 32
-            scene.cycles.use_denoising = True
-        scene.render.resolution_x = 1920
-        scene.render.resolution_y = 1080
-        scene.render.filepath = str(out_path)
-        bpy.ops.render.render(write_still=True)
-        print(f"[Render] Preview complete: {out_path}")
+        # 1. Clean existing scene
+        bpy.ops.object.select_all(action="SELECT")
+        bpy.ops.object.delete(use_global=False)
+        for b in (bpy.data.meshes, bpy.data.materials, bpy.data.lights, bpy.data.cameras, bpy.data.collections):
+            for block in list(b):
+                b.remove(block)
 
-    print("=" * 70 + "\n")
+        # 2. Build Kitchen Run at origin (0, 0) running along Y
+        mats = create_kitchen_materials()
+        print("[1/3] Constructing Kitchen Joinery & Appliances...")
+        k_root = build_kitchen(
+            origin=(0.0, 0.0),
+            along=(0.0, 1.0),
+            out=(1.0, 0.0),
+            units=DEFAULT_KITCHEN_UNITS,
+            mats=mats,
+            end_panel=True,
+        )
+        print(f"      - Built {len(DEFAULT_KITCHEN_UNITS)} units (Total length: 440 cm):")
+        for u in DEFAULT_KITCHEN_UNITS:
+            print(f"        * {u['kind']:<15} {u['width']} cm ({u['label']})")
+
+        # 3. Studio Rig & Camera
+        print(f"[2/3] Setting up studio lighting and framed camera (view='{view}')...")
+        setup_kitchen_studio(k_root, view=view)
+
+        # Export native COLLADA (.dae) for SketchUp if requested
+        if is_sketchup:
+            out_dae = export_kitchen_dae("renders/markovo_kitchen.dae")
+            print(f"[SketchUp] Exported native COLLADA DAE for SketchUp: {out_dae}")
+
+        # Render if requested via '--render'
+        if is_render:
+            out_path = Path("renders/kitchen_furniture_preview.png").resolve()
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            print(f"\n[3/3] [Render] Rendering studio preview to: {out_path}")
+            scene = bpy.context.scene
+            scene.render.engine = "CYCLES"
+            if hasattr(scene, "cycles"):
+                scene.cycles.device = "CPU"
+                scene.cycles.samples = 32
+                scene.cycles.use_denoising = True
+            scene.render.resolution_x = 1920
+            scene.render.resolution_y = 1080
+            scene.render.filepath = str(out_path)
+            bpy.ops.render.render(write_still=True)
+            print(f"[Render] Preview complete: {out_path}")
+
+        print("=" * 70 + "\n")
 
 
 if __name__ == "__main__":
     main()
-

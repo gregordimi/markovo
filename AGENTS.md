@@ -20,14 +20,23 @@ This file contains operating instructions for AI coding assistants working in th
 | **Export AutoCAD DXF & Vector SVG** | `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/blender_floor_plans.py -- --dxf --svg` |
 | **Develop Kitchen Furniture in Isolation** | `/Applications/Blender.app/Contents/MacOS/Blender --python scripts/furniture/kitchen.py` |
 | **Render Isolated Kitchen Furniture** | `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/furniture/kitchen.py -- --render` |
+| **Export Room Shell to SketchUp (.dae)** | `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/furniture/<room>.py -- --export-shell` |
+| **Room Dimensions & Clearances Spec** | See [`docs/ROOM_SPECS.md`](file:///Users/gdimitrov/projects/markovo/docs/ROOM_SPECS.md) |
 
 ---
 
 ## 2. Architecture Quick Reference
 
 - **Entry Point**: [`scripts/blender_floor_plans.py`](file:///Users/gdimitrov/projects/markovo/scripts/blender_floor_plans.py)
+- **Room Specs Guide**: [`docs/ROOM_SPECS.md`](file:///Users/gdimitrov/projects/markovo/docs/ROOM_SPECS.md) (Exact inner room dimensions, wall boundaries, ceiling heights, door/window openings).
 - **Modular Furniture**: [`scripts/furniture/`](file:///Users/gdimitrov/projects/markovo/scripts/furniture)
-  - [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/kitchen.py): Single source of truth for kitchen cabinetry, inset fronts, and appliances. Runnable in isolation with a dedicated studio lighting & camera rig, or imported into the master plan via `build_kitchen`.
+  - [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/kitchen.py): Kitchen cabinetry, inset fronts, and appliances.
+  - [`living_room.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/living_room.py): Living room sofa, coffee table, media unit, 65" TV.
+  - [`bedroom.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/bedroom.py): Double bed 160x200, nightstands, wardrobe closet.
+  - [`bathroom.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/bathroom.py): Walk-in shower, floating vanity sink, wall-hung WC, plumbing shaft.
+  - [`utility.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/utility.py): Stacked washer/dryer, laundry tall cupboard, boiler.
+  - [`attic_office.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/attic_office.py): Executive desk, ergonomic chair, tall library bookshelf.
+  - [`attic_bedroom.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/attic_bedroom.py): Attic master bed, nightstands, low knee-wall storage, stair balustrade.
 - **Core CAD Package**: [`scripts/cad_markovo/`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo)
   - [`config.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/config.py): Units (`CM = 0.01`), vertical dimensions, layout flags.
   - [`materials.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/materials.py): Material shaders & factory (`create_materials()`).

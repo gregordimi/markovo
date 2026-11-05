@@ -1,0 +1,256 @@
+<?xml version='1.0' encoding='utf-8'?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <unit name="meter" meter="1" />
+    <up_axis>Z_UP</up_axis>
+  </asset>
+  <library_geometries>
+    <geometry id="geom-AB_Floor_Main" name="AB_Floor_Main">
+      <mesh>
+        <source id="geom-AB_Floor_Main-pos">
+          <float_array id="geom-AB_Floor_Main-pos-arr" count="24">3.600000 5.700000 -0.150000 7.000000 5.700000 -0.150000 7.000000 9.180000 -0.150000 3.600000 9.180000 -0.150000 3.600000 5.700000 0.000000 7.000000 5.700000 0.000000 7.000000 9.180000 0.000000 3.600000 9.180000 0.000000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Floor_Main-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Floor_Main-v">
+          <input semantic="POSITION" source="#geom-AB_Floor_Main-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Floor_Main-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Floor_Alcove" name="AB_Floor_Alcove">
+      <mesh>
+        <source id="geom-AB_Floor_Alcove-pos">
+          <float_array id="geom-AB_Floor_Alcove-pos-arr" count="24">2.200000 5.700000 -0.150000 3.600000 5.700000 -0.150000 3.600000 10.400000 -0.150000 2.200000 10.400000 -0.150000 2.200000 5.700000 0.000000 3.600000 5.700000 0.000000 3.600000 10.400000 0.000000 2.200000 10.400000 0.000000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Floor_Alcove-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Floor_Alcove-v">
+          <input semantic="POSITION" source="#geom-AB_Floor_Alcove-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Floor_Alcove-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_East_Party" name="AB_Wall_East_Party">
+      <mesh>
+        <source id="geom-AB_Wall_East_Party-pos">
+          <float_array id="geom-AB_Wall_East_Party-pos-arr" count="24">7.000000 5.700000 0.000000 7.150000 5.700000 0.000000 7.150000 9.180000 0.000000 7.000000 9.180000 0.000000 7.000000 5.700000 2.800000 7.150000 5.700000 2.800000 7.150000 9.180000 2.800000 7.000000 9.180000 2.800000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_East_Party-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_East_Party-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_East_Party-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_East_Party-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_West_Knee" name="AB_Wall_West_Knee">
+      <mesh>
+        <source id="geom-AB_Wall_West_Knee-pos">
+          <float_array id="geom-AB_Wall_West_Knee-pos-arr" count="24">2.050000 5.700000 0.000000 2.200000 5.700000 0.000000 2.200000 10.400000 0.000000 2.050000 10.400000 0.000000 2.050000 5.700000 1.840000 2.200000 5.700000 1.840000 2.200000 10.400000 1.840000 2.050000 10.400000 1.840000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_West_Knee-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_West_Knee-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_West_Knee-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_West_Knee-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_North_Alcove" name="AB_Wall_North_Alcove">
+      <mesh>
+        <source id="geom-AB_Wall_North_Alcove-pos">
+          <float_array id="geom-AB_Wall_North_Alcove-pos-arr" count="24">2.200000 10.400000 0.000000 3.600000 10.400000 0.000000 3.600000 10.550000 0.000000 2.200000 10.550000 0.000000 2.200000 10.400000 1.980000 3.600000 10.400000 1.980000 3.600000 10.550000 1.980000 2.200000 10.550000 1.980000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_North_Alcove-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_North_Alcove-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_North_Alcove-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_North_Alcove-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_North_Door_Pier" name="AB_Wall_North_Door_Pier">
+      <mesh>
+        <source id="geom-AB_Wall_North_Door_Pier-pos">
+          <float_array id="geom-AB_Wall_North_Door_Pier-pos-arr" count="24">3.600000 9.180000 0.000000 4.350000 9.180000 0.000000 4.350000 9.330000 0.000000 3.600000 9.330000 0.000000 3.600000 9.180000 2.050000 4.350000 9.180000 2.050000 4.350000 9.330000 2.050000 3.600000 9.330000 2.050000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_North_Door_Pier-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_North_Door_Pier-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_North_Door_Pier-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_North_Door_Pier-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_North_Sill" name="AB_Wall_North_Sill">
+      <mesh>
+        <source id="geom-AB_Wall_North_Sill-pos">
+          <float_array id="geom-AB_Wall_North_Sill-pos-arr" count="24">5.100000 9.180000 0.000000 6.600000 9.180000 0.000000 6.600000 9.330000 0.000000 5.100000 9.330000 0.000000 5.100000 9.180000 0.900000 6.600000 9.180000 0.900000 6.600000 9.330000 0.900000 5.100000 9.330000 0.900000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_North_Sill-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_North_Sill-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_North_Sill-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_North_Sill-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_North_Pier_E" name="AB_Wall_North_Pier_E">
+      <mesh>
+        <source id="geom-AB_Wall_North_Pier_E-pos">
+          <float_array id="geom-AB_Wall_North_Pier_E-pos-arr" count="24">6.600000 9.180000 0.000000 7.000000 9.180000 0.000000 7.000000 9.330000 0.000000 6.600000 9.330000 0.000000 6.600000 9.180000 2.050000 7.000000 9.180000 2.050000 7.000000 9.330000 2.050000 6.600000 9.330000 2.050000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_North_Pier_E-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_North_Pier_E-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_North_Pier_E-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_North_Pier_E-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_North_Lintel" name="AB_Wall_North_Lintel">
+      <mesh>
+        <source id="geom-AB_Wall_North_Lintel-pos">
+          <float_array id="geom-AB_Wall_North_Lintel-pos-arr" count="24">3.600000 9.180000 2.050000 7.000000 9.180000 2.050000 7.000000 9.330000 2.050000 3.600000 9.330000 2.050000 3.600000 9.180000 2.460000 7.000000 9.180000 2.460000 7.000000 9.330000 2.460000 3.600000 9.330000 2.460000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_North_Lintel-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_North_Lintel-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_North_Lintel-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_North_Lintel-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+    <geometry id="geom-AB_Wall_Balcony_Divider" name="AB_Wall_Balcony_Divider">
+      <mesh>
+        <source id="geom-AB_Wall_Balcony_Divider-pos">
+          <float_array id="geom-AB_Wall_Balcony_Divider-pos-arr" count="24">3.600000 9.180000 0.000000 3.750000 9.180000 0.000000 3.750000 10.400000 0.000000 3.600000 10.400000 0.000000 3.600000 9.180000 2.120000 3.750000 9.180000 2.120000 3.750000 10.400000 2.120000 3.600000 10.400000 2.120000</float_array>
+          <technique_common>
+            <accessor source="#geom-AB_Wall_Balcony_Divider-pos-arr" count="8" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="geom-AB_Wall_Balcony_Divider-v">
+          <input semantic="POSITION" source="#geom-AB_Wall_Balcony_Divider-pos" />
+        </vertices>
+        <triangles count="12">
+          <input semantic="VERTEX" source="#geom-AB_Wall_Balcony_Divider-v" offset="0" />
+          <p>3 2 1 3 1 0 4 5 6 4 6 7 0 1 5 0 5 4 1 2 6 1 6 5 2 3 7 2 7 6 3 0 4 3 4 7</p>
+        </triangles>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="Scene" name="Scene">
+      <node id="AB_Floor_Main" name="AB_Floor_Main">
+        <instance_geometry url="#geom-AB_Floor_Main" />
+      </node>
+      <node id="AB_Floor_Alcove" name="AB_Floor_Alcove">
+        <instance_geometry url="#geom-AB_Floor_Alcove" />
+      </node>
+      <node id="AB_Wall_East_Party" name="AB_Wall_East_Party">
+        <instance_geometry url="#geom-AB_Wall_East_Party" />
+      </node>
+      <node id="AB_Wall_West_Knee" name="AB_Wall_West_Knee">
+        <instance_geometry url="#geom-AB_Wall_West_Knee" />
+      </node>
+      <node id="AB_Wall_North_Alcove" name="AB_Wall_North_Alcove">
+        <instance_geometry url="#geom-AB_Wall_North_Alcove" />
+      </node>
+      <node id="AB_Wall_North_Door_Pier" name="AB_Wall_North_Door_Pier">
+        <instance_geometry url="#geom-AB_Wall_North_Door_Pier" />
+      </node>
+      <node id="AB_Wall_North_Sill" name="AB_Wall_North_Sill">
+        <instance_geometry url="#geom-AB_Wall_North_Sill" />
+      </node>
+      <node id="AB_Wall_North_Pier_E" name="AB_Wall_North_Pier_E">
+        <instance_geometry url="#geom-AB_Wall_North_Pier_E" />
+      </node>
+      <node id="AB_Wall_North_Lintel" name="AB_Wall_North_Lintel">
+        <instance_geometry url="#geom-AB_Wall_North_Lintel" />
+      </node>
+      <node id="AB_Wall_Balcony_Divider" name="AB_Wall_Balcony_Divider">
+        <instance_geometry url="#geom-AB_Wall_Balcony_Divider" />
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene" />
+  </scene>
+</COLLADA>

@@ -253,7 +253,16 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     )
 
     # --------------------------------------------------------------------------
-    # 10. Architectural Room Labels & Callouts
+    # 10. Modular Room Furniture (Living Room, Bedroom, Bathroom, Utility)
+    # --------------------------------------------------------------------------
+    from furniture import living_room, bedroom, bathroom, utility
+    living_room.build_living_room_furniture(f3.col, living_room.create_materials(), parent=f3.root)
+    bedroom.build_bedroom_furniture(f3.col, bedroom.create_materials(), parent=f3.root)
+    bathroom.build_bathroom_furniture(f3.col, bathroom.create_materials(), parent=f3.root)
+    utility.build_utility_furniture(f3.col, utility.create_materials(), parent=f3.root)
+
+    # --------------------------------------------------------------------------
+    # 11. Architectural Room Labels & Callouts
     # --------------------------------------------------------------------------
     f3.add_label("FLOOR 3 - MAIN LEVEL", 350, 1110, z=0.05, size=28.0)
     f3.add_label("BALCONY", 525, 980, size=18.0)
@@ -263,7 +272,7 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     f3.add_label("OPENING 155", 111, 565, size=12.0, mat_key="dim")
 
     # --------------------------------------------------------------------------
-    # 11. Architectural CAD Dimension Strings (Wall Lengths)
+    # 12. Architectural CAD Dimension Strings (Wall Lengths)
     # --------------------------------------------------------------------------
     f3.add_dimension(0, 1040, 350, 1040, offset_cm=55, side="left", id="dim_kitchen_north")
     f3.add_dimension(350, 920, 700, 920, offset_cm=55, side="left", id="dim_living_balcony_north")
