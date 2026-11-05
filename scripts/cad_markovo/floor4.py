@@ -175,14 +175,20 @@ def build_floor_4(
     )
 
     # --------------------------------------------------------------------------
-    # 6. Architectural Room Labels
+    # 6. Architectural Room Labels & Callouts
     # --------------------------------------------------------------------------
     f4.add_label("ATTIC FLOOR 4 - UPPER LEVEL", 350, 1110, z=0.05, size=28.0)
     f4.add_label("UTILITY ROOM", 100, 650, z=0.06, size=18.0, rotation_z=90.0)
-    f4.add_label("ATTIC BEDROOM", 460, 740)
     f4.add_label("BALCONY", 530, 980, size=18.0)
-    f4.add_label("ATTIC OFFICE", 530, 310, size=20.0)
     f4.add_label("BALCONY", 530, 60, size=18.0)
+
+    # --------------------------------------------------------------------------
+    # 7. Architectural CAD Dimension Strings (Wall Lengths)
+    # --------------------------------------------------------------------------
+    f4.add_dimension(220, 1040, 360, 1040, offset_cm=55, side="left", id="dim_attic_bedroom_north")
+    f4.add_dimension(360, 918, 700, 918, offset_cm=55, side="left", id="dim_attic_balcony_north")
+    f4.add_dimension(700, 918, 700, 120, offset_cm=55, side="left", id="dim_attic_party_wall_east")
+    f4.add_dimension(700, 120, 360, 120, offset_cm=55, side="left", id="dim_attic_office_south")
 
     f4.build_geometry()
     return f4

@@ -12,6 +12,13 @@ Modular BIM/CAD modeling package for Blender:
 - scene: scene clearing, lighting, cameras, and rendering
 """
 
+import site
+import sys
+
+_user_site = site.getusersitepackages()
+if _user_site and _user_site not in sys.path:
+    sys.path.append(_user_site)
+
 from . import config
 from . import materials
 from . import geometry
@@ -20,6 +27,7 @@ from . import builder
 from . import floor3
 from . import floor4
 from . import scene
+from . import cad_export
 
 __all__ = [
     "config",
@@ -30,4 +38,5 @@ __all__ = [
     "floor3",
     "floor4",
     "scene",
+    "cad_export",
 ]

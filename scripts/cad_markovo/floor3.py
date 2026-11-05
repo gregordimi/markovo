@@ -274,18 +274,24 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     )
 
     # --------------------------------------------------------------------------
-    # 10. Architectural Room Labels
+    # 10. Architectural Room Labels & Callouts
     # --------------------------------------------------------------------------
     f3.add_label("FLOOR 3 - MAIN LEVEL", 350, 1110, z=0.05, size=28.0)
-    f3.add_label("KITCHEN", 175, 780)
-    f3.add_label("LIVING ROOM", 525, 710)
     f3.add_label("BALCONY", 525, 980, size=18.0)
     f3.add_label("BALCONY", -60, 372, size=18.0, rotation_z=90.0)
-    f3.add_label("BATH", 115, 365, size=20.0)
-    f3.add_label("BEDROOM", 538, 310)
     f3.add_label("BALCONY", 538, 60, size=18.0)
     # Centered in the clear passage between the kitchen run front (x=67.5) and the utility stub (x=155)
     f3.add_label("OPENING 155", 111, 565, size=12.0, mat_key="dim")
+
+    # --------------------------------------------------------------------------
+    # 11. Architectural CAD Dimension Strings (Wall Lengths)
+    # --------------------------------------------------------------------------
+    f3.add_dimension(0, 1040, 350, 1040, offset_cm=55, side="left", id="dim_kitchen_north")
+    f3.add_dimension(350, 920, 700, 920, offset_cm=55, side="left", id="dim_living_balcony_north")
+    f3.add_dimension(700, 920, 700, 120, offset_cm=55, side="left", id="dim_party_wall_east")
+    f3.add_dimension(700, 120, 377, 120, offset_cm=55, side="left", id="dim_bedroom_south")
+    f3.add_dimension(377, 120, 0, 120, offset_cm=55, side="left", id="dim_stairwell_south")
+    f3.add_dimension(0, 120, 0, 1040, offset_cm=75, side="left", id="dim_facade_west")
 
     f3.build_geometry()
     return f3

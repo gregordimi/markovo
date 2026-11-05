@@ -12,6 +12,7 @@ Provides:
 """
 
 import math
+from typing import Tuple, List, Dict
 import bpy
 import bmesh
 from mathutils import Vector, Matrix
@@ -964,3 +965,171 @@ def create_text_label_3d(
     if parent:
         obj.parent = parent
     return obj
+
+
+def create_dimension_line_3d(
+    name_prefix: str,
+    p1: tuple,
+    p2: tuple,
+    offset_cm: float = 40.0,
+    side: str = "left",
+    z: float = 0.04,
+    show_text: bool = True,
+    text_format: str = "cm",
+    line_thickness_cm: float = 1.2,
+    mat: bpy.types.Material = None,
+    text_mat: bpy.types.Material = None,
+    col: bpy.types.Collection = None,
+    parent: bpy.types.Object = None,
+) -> Tuple[bpy.types.Object, bpy.types.Object]:
+    """
+    Creates an architectural CAD dimension string in 3D:
+    - Offset dimension line parallel to p1 -> p2
+    - Perpendicular witness extension lines from p1 & p2 to the offset line
+    - 45-degree architectural slash ticks at both endpoints
+    - Centered 3D extruded text indicating distance
+    """
+    x1, y1 = float(p1[0]), float(p1[1])
+    x2, y2 = float(p2[0]), float(p2[1])
+    dx, dy = x2 - x1, y2 - y1
+    L = math.hypot(dx, dy)
+    if L < 1.0:
+        return None, None
+
+    ux, uy = dx / L, dy / L
+    if side == "left":
+        nx, ny = -uy, ux
+    else:
+        nx, ny = uy, -ux
+
+    d1_x = x1 + nx * offset_cm
+    d1_y = y1 + ny * offset_cm
+    d2_x = x2 + nx * offset_cm
+    d2_y = y2 + ny * offset_cm
+
+    mesh = bpy.data.meshes.new(f"{name_prefix}_DimLines")
+    bm = bmesh.new()
+    hw = (line_thickness_cm * 0.5) * CM
+    z_m = z
+
+    def add_ribbon_segment(sx1, sy1, sx2, sy2):
+        sdx, sdy = sx2 - sx1, sy2 - sy1
+        slen = math.hypot(sdx, sdy)
+        if slen < 1e-4:
+            return
+        sux, suy = (sdx / slen), (sdy / slen)
+        snx, sny = -suy * hw, sux * hw
+
+        p_a = (sx1 * CM - snx, sy1 * CM - sny, z_m)
+        p_b = (sx2 * CM - snx, sy2 * CM - sny, z_m)
+        p_c = (sx2 * CM + snx, sy2 * CM + sny, z_m)
+        p_d = (sx1 * CM + snx, sy1 * CM + sny, z_m)
+
+        v_a = bm.verts.new(p_a)
+        v_b = bm.verts.new(p_b)
+        v_c = bm.verts.new(p_c)
+        v_d = bm.verts.new(p_d)
+        bm.faces.new([v_a, v_b, v_c, v_d])
+
+    # 1. Main parallel dimension line with small 6cm overshoot
+    add_ribbon_segment(
+        d1_x - ux * 6.0, d1_y - uy * 6.0,
+        d2_x + ux * 6.0, d2_y + uy * 6.0,
+    )
+
+    # 2. Witness extension line 1
+    add_ribbon_segment(
+        x1 + nx * 5.0, y1 + ny * 5.0,
+        d1_x + nx * 8.0, d1_y + ny * 8.0,
+    )
+
+    # 3. Witness extension line 2
+    add_ribbon_segment(
+        x2 + nx * 5.0, y2 + ny * 5.0,
+        d2_x + nx * 8.0, d2_y + ny * 8.0,
+    )
+
+    # 4. 45-degree architectural slash ticks at d1 and d2
+    tick_half = 7.0  # 14 cm total tick length
+    tux = (ux + nx) * 0.7071 * tick_half
+    tuy = (uy + ny) * 0.7071 * tick_half
+    add_ribbon_segment(d1_x - tux, d1_y - tuy, d1_x + tux, d1_y + tuy)
+    add_ribbon_segment(d2_x - tux, d2_y - tuy, d2_x + tux, d2_y + tuy)
+
+    bm.to_mesh(mesh)
+    bm.free()
+
+    lines_obj = bpy.data.objects.new(f"{name_prefix}_DimLines", mesh)
+    if mat:
+        lines_obj.data.materials.append(mat)
+    if col:
+        link_to_collection(lines_obj, col)
+    if parent:
+        lines_obj.parent = parent
+
+    text_obj = None
+    if show_text:
+        val_str = f"{L * 0.01:.2f}" if text_format == "m" else f"{round(L)}"
+        rot_deg = math.degrees(math.atan2(uy, ux))
+        if 90.0 < rot_deg <= 270.0:
+            rot_deg -= 180.0
+        elif -270.0 <= rot_deg < -90.0:
+            rot_deg += 180.0
+
+        # Centered along dimension line, pushed 8 cm outward
+        tx = 0.5 * (d1_x + d2_x) + nx * 7.0
+        ty = 0.5 * (d1_y + d2_y) + ny * 7.0
+
+        text_obj = create_text_label_3d(
+            name_prefix=f"{name_prefix}_DimText",
+            text_str=val_str,
+            x=tx,
+            y=ty,
+            z=z_m + 0.005,
+            size=14.0,
+            rotation_z=rot_deg,
+            mat=text_mat if text_mat else mat,
+            col=col,
+            parent=parent,
+        )
+
+    return lines_obj, text_obj
+
+
+def create_room_stamp_3d(
+    name_prefix: str,
+    room_name: str,
+    poly_2d: list,
+    z: float = 0.03,
+    size: float = 14.0,
+    mat: bpy.types.Material = None,
+    col: bpy.types.Collection = None,
+    parent: bpy.types.Object = None,
+) -> bpy.types.Object:
+    """
+    Computes exact room area in m² and centroid using shapely,
+    and creates a 3-line architectural room stamp.
+    """
+    import shapely.geometry
+    poly = shapely.geometry.Polygon(poly_2d)
+    area_m2 = round(poly.area * 0.0001, 2)
+    minx, miny, maxx, maxy = poly.bounds
+    width_m = round((maxx - minx) * 0.01, 2)
+    depth_m = round((maxy - miny) * 0.01, 2)
+    cx, cy = poly.centroid.x, poly.centroid.y
+
+    clean_name = room_name.upper().replace("_", " ")
+    text_body = f"{clean_name}\n{width_m:.2f} × {depth_m:.2f} m\n{area_m2:.2f} m²"
+
+    return create_text_label_3d(
+        name_prefix=name_prefix,
+        text_str=text_body,
+        x=cx,
+        y=cy,
+        z=z,
+        size=size,
+        rotation_z=0.0,
+        mat=mat,
+        col=col,
+        parent=parent,
+    )

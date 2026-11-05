@@ -37,9 +37,10 @@ markovo/
         ├── geometry.py                      # 3D CAD mesh primitives & fixtures
         ├── kitchen.py                       # Kitchen joinery runs (carcasses, fronts, worktop)
         ├── builder.py                       # FloorPlanBuilder engine (cutouts & slabs)
+        ├── cad_export.py                    # AutoCAD DXF & 2D Vector SVG blueprint exporter
         ├── floor3.py                        # Floor 3 (Main Level) declarative data
         ├── floor4.py                        # Floor 4 (Attic Level) declarative data
-        └── scene.py                         # Scene clearing, lighting, cameras, Cycles
+        └── scene.py                         # Scene clearing, lighting, cameras, Cycles & Workbench
 ```
 
 ### Module Responsibilities:
@@ -48,13 +49,14 @@ markovo/
 | :--- | :--- |
 | [`config.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/config.py) | Defines `CM = 0.01` conversion factor, vertical levels (`WALL_HEIGHT`, `SLAB_THICK`, `DOOR_HEIGHT`, `WIN_SILL`, `WIN_TOP`, `TERRACE_PARAPET_HEIGHT`, `TERRACE_COPING_THICKNESS`), and layout flags (`STACK_FLOORS`). |
 | [`materials.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/materials.py) | Central material factory: procedural clay tiles, parallel light parquet, cement mosaic terrazzo, white uPVC, stone coping, and PBR shaders. |
-| [`geometry.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/geometry.py) | Low-level mesh geometry: `create_prism_from_quad`, `create_extruded_polygon`, `wall_quad`, uPVC windows, doors with swing arcs, stairs, solid terrace parapets, and coping. |
+| [`geometry.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/geometry.py) | Low-level mesh geometry: `create_prism_from_quad`, `create_extruded_polygon`, `wall_quad`, uPVC windows, doors with swing arcs, stairs, solid terrace parapets, dimension strings, and shapely room area stamps. |
 | [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/kitchen.py) | Kitchen runs along a wall face: birch plywood carcasses with exposed edges, olive inset doors/drawers, recessed plinth, solid wood worktop sliced around the sink basin, hob, oven front, tall fridge housing. |
-| [`builder.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py) | [`FloorPlanBuilder`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py#L40) class: manages object collections, root empties, automated collinear wall opening cutouts, lintels, sills, and room finishes. |
-| [`floor3.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor3.py) | Declarative floor specification for Floor 3 (rooms, walls, openings, stairs, balconies). |
+| [`builder.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py) | [`FloorPlanBuilder`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py#L40) class: manages object collections, root empties, automated collinear wall opening cutouts, lintels, sills, dimensions, and room area stamps. |
+| [`cad_export.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/cad_export.py) | Full AutoCAD `.dxf` (R2018) exporter using `ezdxf` with standard CAD layers (`A-WALL`, `A-DOOR`, `A-GLAZ`, `A-DIMS`), and scalable 2D vector blueprint SVG exporter using `drawsvg`. |
+| [`floor3.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor3.py) | Declarative floor specification for Floor 3 (rooms, walls, openings, stairs, balconies, perimeter dimensions). |
 | [`floor4.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor4.py) | Declarative floor specification for Floor 4 Attic. |
-| [`scene.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/scene.py) | Scene reset, studio sun/fill lighting rig, cameras (Perspective & CAD Ortho), and Cycles CPU rendering. |
-| [`blender_floor_plans.py`](file:///Users/gdimitrov/projects/markovo/scripts/blender_floor_plans.py) | Top-level runner, CLI argument parser (`--render`, `--stack`), and hot-reloader for Blender's internal Python environment. |
+| [`scene.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/scene.py) | Scene reset, architectural lighting rig, multi-camera room framing (Kitchen, Bathroom, Living Room, etc.), Cycles CPU rendering, and Workbench blueprint/wireframe rendering. |
+| [`blender_floor_plans.py`](file:///Users/gdimitrov/projects/markovo/scripts/blender_floor_plans.py) | Top-level runner, CLI argument parser (`--render`, `--view`, `--blueprint`, `--wireframe`, `--dxf`, `--svg`, `--stack`), and hot-reloader for Blender's internal Python environment. |
 
 ---
 

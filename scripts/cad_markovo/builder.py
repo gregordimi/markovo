@@ -30,6 +30,8 @@ from .geometry import (
     create_curved_stairs_with_railing_3d,
     create_terrace_parapet_and_coping,
     create_text_label_3d,
+    create_dimension_line_3d,
+    create_room_stamp_3d,
 )
 from .kitchen import create_kitchen_run_3d
 
@@ -72,6 +74,28 @@ class FloorPlanBuilder:
         self.labels: List[dict] = []
         self.custom_prisms: List[dict] = []
         self.kitchen_runs: List[dict] = []
+        self.dimensions: List[dict] = []
+        self.auto_room_stamps: bool = True
+        self.dim_col = get_or_create_collection(f"{name}_Dimensions")
+
+    def add_dimension(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        offset_cm: float = 45.0,
+        side: str = "left",
+        id: str = None,
+    ):
+        """Adds a 3D architectural CAD dimension string."""
+        self.dimensions.append({
+            "p1": (float(x1), float(y1)),
+            "p2": (float(x2), float(y2)),
+            "offset_cm": float(offset_cm),
+            "side": side,
+            "id": id,
+        })
 
     def add_wall(
         self,
@@ -610,6 +634,40 @@ class FloorPlanBuilder:
                 end_panel=run["end_panel"],
             )
 
+    def _build_dimensions_and_stamps(self):
+        """Builds all dimension strings and automated shapely room area stamps."""
+        # 1. Custom and perimeter dimension strings
+        for d_idx, d in enumerate(self.dimensions, start=1):
+            dim_id = d.get("id") or f"Dim_{d_idx}"
+            create_dimension_line_3d(
+                name_prefix=f"{self.name}_{dim_id}",
+                p1=d["p1"],
+                p2=d["p2"],
+                offset_cm=d["offset_cm"],
+                side=d["side"],
+                z=0.04,
+                mat=self.mats.get("dim"),
+                text_mat=self.mats.get("text"),
+                col=self.dim_col,
+                parent=self.root,
+            )
+
+        # 2. Automated Room Area & Centroid Stamps using shapely
+        if self.auto_room_stamps:
+            for r in self.rooms:
+                if r.get("mat_key") == "void":
+                    continue
+                create_room_stamp_3d(
+                    name_prefix=f"{self.name}_{r['name']}",
+                    room_name=r["name"],
+                    poly_2d=r["poly"],
+                    z=0.04,
+                    size=12.0,
+                    mat=self.mats.get("text"),
+                    col=self.dim_col,
+                    parent=self.root,
+                )
+
     def build_geometry(self):
         """Constructs all floor components in clean dependency order."""
         self._build_walls_with_cutouts()
@@ -621,3 +679,4 @@ class FloorPlanBuilder:
         self._build_custom_prisms()
         self._build_kitchen_runs()
         self._build_labels()
+        self._build_dimensions_and_stamps()

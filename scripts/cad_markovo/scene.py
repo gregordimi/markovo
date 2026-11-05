@@ -4,7 +4,9 @@ Scene management, architectural lighting, cameras, and rendering utilities.
 
 import math
 from pathlib import Path
+from typing import List, Tuple
 import bpy
+from mathutils import Vector
 from .builder import get_or_create_collection, link_to_collection
 
 
@@ -25,8 +27,46 @@ def clear_scene():
             block_list.remove(block)
 
 
+def create_camera(
+    name: str,
+    location: Tuple[float, float, float],
+    target: Tuple[float, float, float] = None,
+    rotation_euler: Tuple[float, float, float] = None,
+    lens: float = 28.0,
+    ortho: bool = False,
+    ortho_scale: float = 10.0,
+    clip_start: float = 0.1,
+    col: bpy.types.Collection = None,
+) -> bpy.types.Object:
+    """Creates a perspective or orthographic camera aimed at a target coordinate or Euler angle."""
+    cam_data = bpy.data.cameras.new(name=name)
+    if ortho:
+        cam_data.type = "ORTHO"
+        cam_data.ortho_scale = ortho_scale
+    else:
+        cam_data.type = "PERSP"
+        cam_data.lens = lens
+    cam_data.clip_start = clip_start
+
+    cam_obj = bpy.data.objects.new(name=name, object_data=cam_data)
+    cam_obj.location = location
+
+    if target is not None:
+        loc_v = Vector(location)
+        tgt_v = Vector(target)
+        direction = tgt_v - loc_v
+        if direction.length > 1e-6:
+            cam_obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
+    elif rotation_euler is not None:
+        cam_obj.rotation_euler = rotation_euler
+
+    if col:
+        link_to_collection(cam_obj, col)
+    return cam_obj
+
+
 def setup_lighting_and_cameras(stack: bool = False):
-    """Sets up an architectural lighting rig, perspective camera, and top-down CAD camera."""
+    """Sets up an architectural lighting rig and full suite of macro and room-specific cameras."""
     env_col = get_or_create_collection("Lighting_And_Cameras")
 
     # --------------------------------------------------------------------------
@@ -52,33 +92,114 @@ def setup_lighting_and_cameras(stack: bool = False):
     link_to_collection(fill_obj, env_col)
 
     # --------------------------------------------------------------------------
-    # 3. Perspective Overview Camera
+    # 3. Macro Perspective Overview Camera
     # --------------------------------------------------------------------------
-    cam_data = bpy.data.cameras.new(name="Camera_Perspective")
-    cam_data.lens = 32.0
-    cam_obj = bpy.data.objects.new(name="Camera_Perspective", object_data=cam_data)
-    if stack:
-        cam_obj.location = (3.5, -8.0, 11.5)
-        cam_obj.rotation_euler = (math.radians(42.0), 0.0, 0.0)
-    else:
-        cam_obj.location = (8.8, -9.2, 16.5)
-        cam_obj.rotation_euler = (math.radians(38.0), 0.0, 0.0)
-    link_to_collection(cam_obj, env_col)
-    bpy.context.scene.camera = cam_obj
+    persp_loc = (3.5, -8.0, 11.5) if stack else (8.8, -9.2, 16.5)
+    persp_rot = (math.radians(42.0), 0.0, 0.0) if stack else (math.radians(38.0), 0.0, 0.0)
+    cam_persp = create_camera(
+        "Camera_Perspective",
+        location=persp_loc,
+        rotation_euler=persp_rot,
+        lens=32.0,
+        col=env_col,
+    )
+    bpy.context.scene.camera = cam_persp
 
     # --------------------------------------------------------------------------
     # 4. Top-Down Orthographic CAD Camera
     # --------------------------------------------------------------------------
-    ortho_data = bpy.data.cameras.new(name="Camera_Top_CAD")
-    ortho_data.type = "ORTHO"
-    ortho_data.ortho_scale = 13.0 if stack else 22.0
-    ortho_obj = bpy.data.objects.new(name="Camera_Top_CAD", object_data=ortho_data)
-    ortho_obj.location = (3.5 if stack else 8.8, 5.2, 20.0)
-    ortho_obj.rotation_euler = (0.0, 0.0, 0.0)
-    link_to_collection(ortho_obj, env_col)
+    cad_loc = (3.5 if stack else 8.8, 5.2, 20.0)
+    create_camera(
+        "Camera_Top_CAD",
+        location=cad_loc,
+        rotation_euler=(0.0, 0.0, 0.0),
+        ortho=True,
+        ortho_scale=13.0 if stack else 22.0,
+        col=env_col,
+    )
 
     # --------------------------------------------------------------------------
-    # 5. Clean Architectural Studio Background
+    # 5. Room-Specific Architectural Cameras (Floor 3)
+    # --------------------------------------------------------------------------
+    # Kitchen Axonometric Overview: high angle looking down into the L-kitchen joinery
+    create_camera(
+        "Camera_Kitchen_Overview",
+        location=(3.2, 4.0, 4.5),
+        target=(1.6, 7.8, 0.9),
+        lens=28.0,
+        col=env_col,
+    )
+
+    # Kitchen Eye-Level: standing at the Living Room threshold looking across fronts and worktop
+    create_camera(
+        "Camera_Kitchen_Eye",
+        location=(3.2, 6.2, 1.55),
+        target=(0.2, 7.2, 1.05),
+        lens=22.0,
+        col=env_col,
+    )
+
+    # Bathroom Overview: elevated cutaway looking down into fixtures and tile layout
+    create_camera(
+        "Camera_Bathroom_Overview",
+        location=(1.15, 1.6, 4.0),
+        target=(1.15, 3.7, 0.7),
+        lens=24.0,
+        col=env_col,
+    )
+
+    # Living Room Overview: elevated view of living area, internal stair base, and balcony opening
+    create_camera(
+        "Camera_Living_Room_Overview",
+        location=(2.6, 3.8, 4.2),
+        target=(5.25, 7.1, 0.9),
+        lens=24.0,
+        col=env_col,
+    )
+
+    # Bedroom Overview (Floor 3)
+    create_camera(
+        "Camera_Bedroom_Overview",
+        location=(2.6, -0.4, 3.8),
+        target=(5.38, 3.1, 0.8),
+        lens=24.0,
+        col=env_col,
+    )
+
+    # Main Stairs & Railing Overview
+    create_camera(
+        "Camera_Main_Stairs_Overview",
+        location=(1.8, -0.6, 3.6),
+        target=(1.8, 1.6, 1.2),
+        lens=28.0,
+        col=env_col,
+    )
+
+    # --------------------------------------------------------------------------
+    # 6. Room-Specific Architectural Cameras (Floor 4 Attic)
+    # --------------------------------------------------------------------------
+    ox, oy, oz = (0.0, 0.0, 2.95) if stack else (10.5, 0.0, 0.0)
+
+    # Attic Office Overview
+    create_camera(
+        "Camera_Attic_Office",
+        location=(ox + 2.6, oy - 0.4, oz + 3.8),
+        target=(ox + 5.3, oy + 3.1, oz + 0.8),
+        lens=24.0,
+        col=env_col,
+    )
+
+    # Attic Bedroom & Sloped Ceiling Overview
+    create_camera(
+        "Camera_Attic_Bedroom",
+        location=(ox + 2.6, oy + 4.2, oz + 4.0),
+        target=(ox + 5.3, oy + 7.5, oz + 0.8),
+        lens=24.0,
+        col=env_col,
+    )
+
+    # --------------------------------------------------------------------------
+    # 7. Clean Architectural Studio Background
     # --------------------------------------------------------------------------
     world = bpy.context.scene.world
     if world is None:
@@ -98,17 +219,32 @@ def setup_lighting_and_cameras(stack: bool = False):
             bg.inputs[1].default_value = 0.85
 
 
+def set_dimensions_visibility(visible: bool):
+    """Toggles render visibility for dimension collections."""
+    for col_name in ("Floor_3_Main_Level_Dimensions", "Floor_4_Attic_Level_Dimensions"):
+        col = bpy.data.collections.get(col_name)
+        if col:
+            col.hide_render = not visible
+            col.hide_viewport = not visible
+
+
 def render_to_file(
     filepath: str,
     camera_name: str = "Camera_Perspective",
     resolution=(1920, 1080),
     samples: int = 32,
+    show_dimensions: bool = None,
 ):
     """Renders the current scene from the specified camera to an image file using Cycles."""
     cam = bpy.data.objects.get(camera_name)
     if not cam:
-        print(f"Warning: Camera {camera_name} not found.")
+        print(f"Warning: Camera '{camera_name}' not found.")
         return
+
+    # By default, show dimensions for top CAD, hide for 3D perspective beauty shots
+    if show_dimensions is None:
+        show_dimensions = "Top_CAD" in camera_name or "CAD" in camera_name
+    set_dimensions_visibility(show_dimensions)
 
     scene = bpy.context.scene
     scene.camera = cam
@@ -126,3 +262,69 @@ def render_to_file(
     print(f"Rendering view '{camera_name}' ({resolution[0]}x{resolution[1]}, {samples} samples) to {filepath}...")
     bpy.ops.render.render(write_still=True)
     print(f"Render complete: {filepath}")
+
+
+def render_workbench_blueprint(
+    filepath: str,
+    camera_name: str = "Camera_Top_CAD",
+    style: str = "blueprint",
+    resolution=(1920, 1080),
+    show_dimensions: bool = True,
+):
+    """
+    Renders an instant technical blueprint or wireframe image using Blender's Workbench engine.
+    Styles:
+      'blueprint': classic dark navy architectural blueprint with white linework & cavity shading.
+      'cad_white': clean technical paper with dark ink lines.
+      'wireframe': full 3D wireframe topology.
+    """
+    cam = bpy.data.objects.get(camera_name)
+    if not cam:
+        print(f"Warning: Camera '{camera_name}' not found for Workbench render.")
+        return
+
+    set_dimensions_visibility(show_dimensions)
+
+    scene = bpy.context.scene
+    scene.camera = cam
+    original_engine = scene.render.engine
+    scene.render.engine = "BLENDER_WORKBENCH"
+
+    shading = scene.display.shading
+    shading.show_cavity = True
+    shading.cavity_type = "BOTH"
+    shading.cavity_ridge_factor = 2.0
+    shading.cavity_valley_factor = 1.5
+
+    if style == "blueprint":
+        shading.type = "SOLID"
+        shading.light = "FLAT"
+        shading.color_type = "SINGLE"
+        shading.single_color = (0.04, 0.12, 0.26)  # Deep architectural navy blue
+        shading.show_object_outline = True
+        shading.object_outline_color = (0.95, 0.96, 1.0)  # Crisp white outline
+    elif style == "wireframe":
+        shading.type = "WIREFRAME"
+        shading.show_xray_wireframe = True
+        shading.xray_alpha_wireframe = 0.8
+    elif style == "cad_white":
+        shading.type = "SOLID"
+        shading.light = "FLAT"
+        shading.color_type = "SINGLE"
+        shading.single_color = (0.96, 0.96, 0.97)  # Clean drafting paper
+        shading.show_object_outline = True
+        shading.object_outline_color = (0.1, 0.1, 0.1)  # Technical black ink
+    else:
+        shading.type = "SOLID"
+
+    scene.render.resolution_x = resolution[0]
+    scene.render.resolution_y = resolution[1]
+    scene.render.filepath = str(filepath)
+
+    Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+    print(f"[Workbench] Rendering {style} '{camera_name}' ({resolution[0]}x{resolution[1]}) to {filepath}...")
+    bpy.ops.render.render(write_still=True)
+    print(f"[Workbench] Render complete: {filepath}")
+
+    # Restore engine
+    scene.render.engine = original_engine

@@ -30,8 +30,14 @@ Usage:
 
 import sys
 import os
+import site
 import importlib
 from pathlib import Path
+
+# Ensure user site-packages are on sys.path for Blender Python
+_user_site = site.getusersitepackages()
+if _user_site and _user_site not in sys.path:
+    sys.path.append(_user_site)
 
 # ------------------------------------------------------------------------------
 # Robust Path Resolution & Auto-Reloading for Blender Scripting
@@ -55,7 +61,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 # Import modular package
 import cad_markovo
-from cad_markovo import config, materials, geometry, kitchen, builder, floor3, floor4, scene
+from cad_markovo import config, materials, geometry, kitchen, builder, floor3, floor4, scene, cad_export
 
 # Hot-reload all submodules when running iteratively inside Blender's Text Editor
 importlib.reload(config)
@@ -66,6 +72,7 @@ importlib.reload(builder)
 importlib.reload(floor3)
 importlib.reload(floor4)
 importlib.reload(scene)
+importlib.reload(cad_export)
 importlib.reload(cad_markovo)
 
 
@@ -76,14 +83,49 @@ importlib.reload(cad_markovo)
 # or False to display them side-by-side (matching the 2-panel architectural plot).
 STACK_FLOORS = False
 
-# Set RENDER_IMAGES = True to automatically render still images to renders/
-RENDER_IMAGES = False
+# Render and Export configurations
 RENDER_DIR = SCRIPT_DIR.parent / "renders"
+RENDER_VIEWS = []
+EXPORT_BLUEPRINT = False
+EXPORT_WIREFRAME = False
+EXPORT_DXF = False
+EXPORT_SVG = False
+
+CAMERA_ALIAS_MAP = {
+    "perspective": "Camera_Perspective",
+    "cad": "Camera_Top_CAD",
+    "top": "Camera_Top_CAD",
+    "cad_top": "Camera_Top_CAD",
+    "kitchen": "Camera_Kitchen_Overview",
+    "kitchen_overview": "Camera_Kitchen_Overview",
+    "kitchen_eye": "Camera_Kitchen_Eye",
+    "bathroom": "Camera_Bathroom_Overview",
+    "bathroom_overview": "Camera_Bathroom_Overview",
+    "living_room": "Camera_Living_Room_Overview",
+    "living": "Camera_Living_Room_Overview",
+    "bedroom": "Camera_Bedroom_Overview",
+    "stairs": "Camera_Main_Stairs_Overview",
+    "attic_office": "Camera_Attic_Office",
+    "attic_bedroom": "Camera_Attic_Bedroom",
+}
+
+ALL_CAMERAS = [
+    "Camera_Perspective",
+    "Camera_Top_CAD",
+    "Camera_Kitchen_Overview",
+    "Camera_Kitchen_Eye",
+    "Camera_Bathroom_Overview",
+    "Camera_Living_Room_Overview",
+    "Camera_Bedroom_Overview",
+    "Camera_Main_Stairs_Overview",
+    "Camera_Attic_Office",
+    "Camera_Attic_Bedroom",
+]
 
 
 def parse_cli_args():
     """Parses optional CLI arguments passed after '--' in Blender CLI."""
-    global STACK_FLOORS, RENDER_IMAGES
+    global STACK_FLOORS, RENDER_VIEWS, EXPORT_BLUEPRINT, EXPORT_WIREFRAME, EXPORT_DXF, EXPORT_SVG
     if "--" not in sys.argv:
         return
 
@@ -94,15 +136,62 @@ def parse_cli_args():
     if "--side-by-side" in args:
         STACK_FLOORS = False
         print("[CLI] Displaying floors side-by-side.")
+
     if "--render" in args:
-        RENDER_IMAGES = True
-        print(f"[CLI] Automatic rendering enabled. Output dir: {RENDER_DIR}")
+        RENDER_VIEWS.extend(["Camera_Perspective", "Camera_Top_CAD"])
+
+    if "--blueprint" in args:
+        EXPORT_BLUEPRINT = True
+        print("[CLI] Technical CAD blueprint rendering enabled.")
+
+    if "--wireframe" in args:
+        EXPORT_WIREFRAME = True
+        print("[CLI] Technical wireframe rendering enabled.")
+
+    if "--dxf" in args:
+        EXPORT_DXF = True
+        print("[CLI] AutoCAD DXF export enabled.")
+
+    if "--svg" in args:
+        EXPORT_SVG = True
+        print("[CLI] 2D Vector SVG blueprint export enabled.")
+
+    if "--all" in args:
+        RENDER_VIEWS.extend(ALL_CAMERAS)
+        EXPORT_BLUEPRINT = True
+        EXPORT_WIREFRAME = True
+        EXPORT_DXF = True
+        EXPORT_SVG = True
+        print("[CLI] Full export suite enabled (all views, blueprint, wireframe, DXF, SVG).")
+
+    # View parsing: --view kitchen,bathroom or --view all
+    for idx, arg in enumerate(args):
+        if arg == "--view" and idx + 1 < len(args):
+            v_val = args[idx + 1].strip().lower()
+            if v_val == "all":
+                RENDER_VIEWS = list(ALL_CAMERAS)
+            else:
+                for token in v_val.split(","):
+                    token = token.strip()
+                    cam_name = CAMERA_ALIAS_MAP.get(token, token)
+                    if cam_name not in RENDER_VIEWS:
+                        RENDER_VIEWS.append(cam_name)
+            print(f"[CLI] Targeted camera views: {RENDER_VIEWS}")
+
     if "--help" in args or "-h" in args:
         print("""
 Markovo 3D Floor Plans CLI Options:
   --stack         : Stack Floor 4 on top of Floor 3 in 3D
   --side-by-side  : Place Floor 3 and Floor 4 side-by-side (default)
-  --render        : Render perspective and CAD views to renders/
+  --render        : Render default perspective and CAD top views
+  --view <name>   : Render specific camera views (e.g. --view kitchen,bathroom or --view all)
+                    Options: kitchen, kitchen_eye, bathroom, living_room, bedroom, stairs,
+                             attic_office, attic_bedroom, perspective, cad, all
+  --blueprint     : Render instant Workbench architectural blueprint (white on navy)
+  --wireframe     : Render instant Workbench wireframe CAD view
+  --dxf           : Export authentic AutoCAD .dxf file with CAD layers & dimensions
+  --svg           : Export 2D vector SVG architectural blueprint sheets
+  --all           : Run complete render & export pipeline
   -h, --help      : Show this help message
 """)
 
@@ -147,23 +236,48 @@ def main():
 
     print("\n" + "-" * 70)
     print("  3D Floor Plans successfully constructed!")
-    print(f"  Floor 3 Walls: {len(f3.walls)} | Windows: {len(f3.windows)} | Doors: {len(f3.doors)} | Terraces: {len(f3.terraces)}")
-    print(f"  Floor 4 Walls: {len(f4.walls)} | Windows: {len(f4.windows)} | Doors: {len(f4.doors)} | Terraces: {len(f4.terraces)}")
+    print(f"  Floor 3 Walls: {len(f3.walls)} | Windows: {len(f3.windows)} | Doors: {len(f3.doors)} | Terraces: {len(f3.terraces)} | Dimensions: {len(f3.dim_col.objects)}")
+    print(f"  Floor 4 Walls: {len(f4.walls)} | Windows: {len(f4.windows)} | Doors: {len(f4.doors)} | Terraces: {len(f4.terraces)} | Dimensions: {len(f4.dim_col.objects)}")
     print("-" * 70)
 
-    # Optional Rendering
-    if RENDER_IMAGES:
-        RENDER_DIR.mkdir(parents=True, exist_ok=True)
-        persp_out = RENDER_DIR / ("markovo_stacked_perspective.png" if STACK_FLOORS else "markovo_floor_plans_perspective.png")
-        ortho_out = RENDER_DIR / ("markovo_stacked_cad_top.png" if STACK_FLOORS else "markovo_floor_plans_cad_top.png")
+    RENDER_DIR.mkdir(parents=True, exist_ok=True)
 
-        print(f"\n[Render] Rendering perspective overview to: {persp_out}")
-        scene.render_to_file(persp_out, camera_name="Camera_Perspective", resolution=(1920, 1080))
+    # A. AutoCAD DXF Export
+    if EXPORT_DXF:
+        dxf_path = RENDER_DIR / ("markovo_stacked.dxf" if STACK_FLOORS else "markovo_floor_plans.dxf")
+        print(f"\n[CAD] Exporting AutoCAD DXF (R2018) to: {dxf_path}")
+        cad_export.export_to_dxf([f3, f4], str(dxf_path))
 
-        print(f"[Render] Rendering top-down CAD orthographic view to: {ortho_out}")
-        scene.render_to_file(ortho_out, camera_name="Camera_Top_CAD", resolution=(1920, 1080))
-        print("[Render] All renders completed successfully!")
+    # B. 2D Vector SVG Export
+    if EXPORT_SVG:
+        svg_f3 = RENDER_DIR / "markovo_floor3_blueprint.svg"
+        svg_f4 = RENDER_DIR / "markovo_floor4_blueprint.svg"
+        print(f"\n[CAD] Exporting 2D Vector SVG blueprints to: {svg_f3.name}, {svg_f4.name}")
+        cad_export.export_to_svg(f3, str(svg_f3), style="blueprint")
+        cad_export.export_to_svg(f4, str(svg_f4), style="blueprint")
 
+    # C. Technical Blueprint (Workbench)
+    if EXPORT_BLUEPRINT:
+        bp_out = RENDER_DIR / ("markovo_blueprint_stacked.png" if STACK_FLOORS else "markovo_blueprint_cad_top.png")
+        print(f"\n[Workbench] Rendering technical CAD blueprint to: {bp_out}")
+        scene.render_workbench_blueprint(bp_out, camera_name="Camera_Top_CAD", style="blueprint", resolution=(1920, 1080))
+
+    # D. Technical Wireframe (Workbench)
+    if EXPORT_WIREFRAME:
+        wf_out = RENDER_DIR / ("markovo_wireframe_stacked.png" if STACK_FLOORS else "markovo_wireframe_cad_top.png")
+        print(f"\n[Workbench] Rendering technical wireframe to: {wf_out}")
+        scene.render_workbench_blueprint(wf_out, camera_name="Camera_Top_CAD", style="wireframe", resolution=(1920, 1080))
+
+    # E. Targeted Camera Renders (Cycles)
+    if RENDER_VIEWS:
+        unique_views = list(dict.fromkeys(RENDER_VIEWS))
+        print(f"\n[Render] Rendering {len(unique_views)} view(s) via Cycles CPU...")
+        for cam_name in unique_views:
+            clean_name = cam_name.lower().replace("camera_", "")
+            view_out = RENDER_DIR / f"markovo_{clean_name}.png"
+            scene.render_to_file(view_out, camera_name=cam_name, resolution=(1920, 1080))
+
+    print("\n[Done] Pipeline execution finished successfully!")
     print("=" * 70 + "\n")
 
 
