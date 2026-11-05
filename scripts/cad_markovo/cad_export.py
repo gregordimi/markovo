@@ -59,10 +59,20 @@ def export_to_dxf(floor_builders: List[FloorPlanBuilder], filepath: str):
             pts = [(x + ox, y + oy) for x, y in r["poly"]]
             msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": "A-FLOR"})
 
-        # 2. Walls (Quads)
-        for w in b.walls:
-            q = wall_quad(w["x1"] + ox, w["y1"] + oy, w["x2"] + ox, w["y2"] + oy, w["thickness"])
-            msp.add_lwpolyline(q, close=True, dxfattribs={"layer": "A-WALL"})
+        # 2. Walls (Unified continuous boundary with mitered corners & T-junction butts)
+        import shapely.geometry, shapely.ops
+        adj_walls = b._compute_adjusted_walls()
+        wall_polys = [shapely.geometry.Polygon(wall_quad(w["x1"] + ox, w["y1"] + oy, w["x2"] + ox, w["y2"] + oy, w["thickness"])) for w in adj_walls]
+        for cb in b._detect_wall_corners():
+            shifted_cb = [(x + ox, y + oy) for x, y in cb["corners"]]
+            wall_polys.append(shapely.geometry.Polygon(shifted_cb))
+        merged_walls = shapely.ops.unary_union(wall_polys)
+
+        polys_to_dxf = [merged_walls] if merged_walls.geom_type == "Polygon" else list(merged_walls.geoms) if merged_walls.geom_type == "MultiPolygon" else []
+        for p in polys_to_dxf:
+            msp.add_lwpolyline(list(p.exterior.coords), close=True, dxfattribs={"layer": "A-WALL"})
+            for interior in p.interiors:
+                msp.add_lwpolyline(list(interior.coords), close=True, dxfattribs={"layer": "A-WALL"})
 
         # 3. Windows
         for win in b.windows:
@@ -240,19 +250,52 @@ def export_to_svg(
         flat_pts = [coord for pt in pts for coord in pt]
         dwg.append(draw.Lines(*flat_pts, close=True, fill=wall_fill, fill_opacity=0.35, stroke="none"))
 
-    # 2. Terraces / Balconies
+    # 2. Terraces / Balconies (with mitered coping)
+    from .geometry import miter_perpendicular_chain
     for t in b.terraces:
         x, y, w, h = t["x"], t["y"], t["w"], t["h"]
         poly = [to_svg(x, y), to_svg(x + w, y), to_svg(x + w, y + h), to_svg(x, y + h)]
         flat_pts = [c for pt in poly for c in pt]
-        dwg.append(draw.Lines(*flat_pts, close=True, fill="none", stroke=terrace_stroke, stroke_width=2.0, stroke_dasharray="6,4"))
+        dwg.append(draw.Lines(*flat_pts, close=True, fill="none", stroke=terrace_stroke, stroke_width=1.5, stroke_dasharray="6,4"))
 
-    # 3. Walls
-    for w in b.walls:
-        q = wall_quad(w["x1"], w["y1"], w["x2"], w["y2"], w["thickness"])
-        svg_q = [to_svg(x, y) for x, y in q]
-        flat_pts = [c for pt in svg_q for c in pt]
-        dwg.append(draw.Lines(*flat_pts, close=True, fill=wall_fill, stroke=wall_stroke, stroke_width=2.5))
+        open_set = set(t["open_edges"])
+        center_pt = (x + w * 0.5, y + h * 0.5)
+        c_sw = (x, y)
+        c_se = (x + w, y)
+        c_ne = (x + w, y + h)
+        c_nw = (x, y + h)
+        chain = None
+        if open_set == {"N", "E"}:
+            chain = [c_nw, c_ne, c_se]
+        elif open_set == {"S", "E", "W"}:
+            chain = [c_nw, c_sw, c_se, c_ne]
+        elif open_set == {"N", "W", "S"}:
+            chain = [c_ne, c_nw, c_sw, c_se]
+
+        if chain:
+            coping_quads = miter_perpendicular_chain(chain, center_pt, 20.0)
+            for cq in coping_quads:
+                svg_cq = [to_svg(cx, cy) for cx, cy in cq]
+                flat_cq = [c for pt in svg_cq for c in pt]
+                dwg.append(draw.Lines(*flat_cq, close=True, fill="#1B3A6B" if style == "blueprint" else "#BDC3C7", stroke=wall_stroke, stroke_width=2.0))
+
+    # 3. Walls (Unified continuous boundary with mitered corners & T-junction butts)
+    import shapely.geometry, shapely.ops
+    adj_walls = b._compute_adjusted_walls()
+    wall_polys = [shapely.geometry.Polygon(wall_quad(w["x1"], w["y1"], w["x2"], w["y2"], w["thickness"])) for w in adj_walls]
+    for cb in b._detect_wall_corners():
+        wall_polys.append(shapely.geometry.Polygon(cb["corners"]))
+    merged_walls = shapely.ops.unary_union(wall_polys)
+
+    polys_to_draw = [merged_walls] if merged_walls.geom_type == "Polygon" else list(merged_walls.geoms) if merged_walls.geom_type == "MultiPolygon" else []
+    for p in polys_to_draw:
+        ext_pts = [to_svg(x, y) for x, y in p.exterior.coords]
+        flat_ext = [c for pt in ext_pts for c in pt]
+        dwg.append(draw.Lines(*flat_ext, close=True, fill=wall_fill, stroke=wall_stroke, stroke_width=2.5))
+        for interior in p.interiors:
+            hole_pts = [to_svg(x, y) for x, y in interior.coords]
+            flat_hole = [c for pt in hole_pts for c in pt]
+            dwg.append(draw.Lines(*flat_hole, close=True, fill=bg_col, stroke=wall_stroke, stroke_width=2.0))
 
     # 4. Windows
     for win in b.windows:

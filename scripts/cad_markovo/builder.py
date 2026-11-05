@@ -29,6 +29,7 @@ from .geometry import (
     create_stairs_3d,
     create_curved_stairs_with_railing_3d,
     create_terrace_parapet_and_coping,
+    create_mitered_terrace_parapet_and_coping,
     create_text_label_3d,
     create_dimension_line_3d,
     create_room_stamp_3d,
@@ -314,9 +315,85 @@ class FloorPlanBuilder:
     # --------------------------------------------------------------------------
     # Building Routines
     # --------------------------------------------------------------------------
+    def _compute_adjusted_walls(self) -> List[dict]:
+        """
+        Computes adjusted wall coordinates with automatic T-junction trimming.
+        When an interior partition wall dead-ends into a through-wall, trims the
+        partition wall back by half the thickness of the through-wall, ensuring
+        flush butting against the interior face with zero collision.
+        """
+        adj_walls = []
+        for w in self.walls:
+            adj_walls.append({
+                "x1": float(w["x1"]), "y1": float(w["y1"]),
+                "x2": float(w["x2"]), "y2": float(w["y2"]),
+                "thickness": float(w["thickness"]),
+                "z_top": w.get("z_top", WALL_HEIGHT),
+                "id": w.get("id"),
+                "room": w.get("room"),
+                "orig": w,
+            })
+
+        for i, w in enumerate(adj_walls):
+            dx, dy = w["x2"] - w["x1"], w["y2"] - w["y1"]
+            L = math.hypot(dx, dy)
+            if L < 1e-3:
+                continue
+            ux, uy = dx / L, dy / L
+
+            # Check start point p1 for T-junction into another wall
+            p1 = (w["x1"], w["y1"])
+            for j, ow in enumerate(self.walls):
+                if i == j:
+                    continue
+                ox1, oy1, ox2, oy2 = ow["x1"], ow["y1"], ow["x2"], ow["y2"]
+                odx, ody = ox2 - ox1, oy2 - oy1
+                oL = math.hypot(odx, ody)
+                if oL < 1e-3:
+                    continue
+                oux, ouy = odx / oL, ody / oL
+                onx, ony = -ouy, oux
+                dist = abs((p1[0] - ox1) * onx + (p1[1] - oy1) * ony)
+                proj = (p1[0] - ox1) * oux + (p1[1] - oy1) * ouy
+                if dist < 1.0 and 2.0 < proj < oL - 2.0:
+                    trim = ow["thickness"] * 0.5
+                    w["x1"] += ux * trim
+                    w["y1"] += uy * trim
+                    break
+
+            # Check end point p2 for T-junction into another wall
+            p2 = (w["x2"], w["y2"])
+            for j, ow in enumerate(self.walls):
+                if i == j:
+                    continue
+                ox1, oy1, ox2, oy2 = ow["x1"], ow["y1"], ow["x2"], ow["y2"]
+                odx, ody = ox2 - ox1, oy2 - oy1
+                oL = math.hypot(odx, ody)
+                if oL < 1e-3:
+                    continue
+                oux, ouy = odx / oL, ody / oL
+                onx, ony = -ouy, oux
+                dist = abs((p2[0] - ox1) * onx + (p2[1] - oy1) * ony)
+                proj = (p2[0] - ox1) * oux + (p2[1] - oy1) * ouy
+                if dist < 1.0 and 2.0 < proj < oL - 2.0:
+                    trim = ow["thickness"] * 0.5
+                    w["x2"] -= ux * trim
+                    w["y2"] -= uy * trim
+                    break
+
+        return adj_walls
+
     def _build_walls_with_cutouts(self):
-        """Constructs all solid walls, door lintels, window sills, and window lintels."""
-        for w_idx, w in enumerate(self.walls):
+        """
+        Constructs all solid walls, door lintels, window sills, and window lintels.
+        Applies automatic T-junction trimming and L-corner miter resolution.
+        All wall segments and corner blocks are unified into a single seamless mesh
+        per floor to ensure clean, continuous CAD outlines without internal lines.
+        """
+        adj_walls = self._compute_adjusted_walls()
+        created_wall_objs = []
+
+        for w_idx, w in enumerate(adj_walls):
             x1, y1, x2, y2, thick = w["x1"], w["y1"], w["x2"], w["y2"], w["thickness"]
             dx, dy = x2 - x1, y2 - y1
             L = math.hypot(dx, dy)
@@ -329,7 +406,7 @@ class FloorPlanBuilder:
             wall_wins = []
             cut_points = {0.0, L}
 
-            # Detect collinear doors
+            # Detect collinear doors relative to the wall line
             for d in self.doors:
                 dist1 = abs((d["hx"] - x1) * nx + (d["hy"] - y1) * ny)
                 dist2 = abs((d["x2"] - x1) * nx + (d["y2"] - y1) * ny)
@@ -341,7 +418,7 @@ class FloorPlanBuilder:
                         wall_doors.append((a, b))
                         cut_points.update([a, b])
 
-            # Detect collinear windows
+            # Detect collinear windows relative to the wall line
             for win in self.windows:
                 dist1 = abs((win["x1"] - x1) * nx + (win["y1"] - y1) * ny)
                 dist2 = abs((win["x2"] - x1) * nx + (win["y2"] - y1) * ny)
@@ -380,7 +457,7 @@ class FloorPlanBuilder:
 
                 if has_door:
                     # Lintel above door
-                    create_prism_from_quad(
+                    obj = create_prism_from_quad(
                         f"{self.name}_Wall_{w_idx}_LintelD_{s_idx}",
                         quad,
                         DOOR_HEIGHT,
@@ -389,10 +466,11 @@ class FloorPlanBuilder:
                         self.col,
                         self.root,
                     )
+                    created_wall_objs.append(obj)
                 elif matched_win is not None:
                     # Sill below window + Lintel above window
                     w_sill, w_top = matched_win[2], matched_win[3]
-                    create_prism_from_quad(
+                    obj_sill = create_prism_from_quad(
                         f"{self.name}_Wall_{w_idx}_SillW_{s_idx}",
                         quad,
                         0.0,
@@ -401,7 +479,7 @@ class FloorPlanBuilder:
                         self.col,
                         self.root,
                     )
-                    create_prism_from_quad(
+                    obj_lintel = create_prism_from_quad(
                         f"{self.name}_Wall_{w_idx}_LintelW_{s_idx}",
                         quad,
                         w_top,
@@ -410,9 +488,10 @@ class FloorPlanBuilder:
                         self.col,
                         self.root,
                     )
+                    created_wall_objs.extend([obj_sill, obj_lintel])
                 else:
                     # Solid full-height wall segment
-                    create_prism_from_quad(
+                    obj = create_prism_from_quad(
                         f"{self.name}_Wall_{w_idx}_Solid_{s_idx}",
                         quad,
                         0.0,
@@ -421,6 +500,110 @@ class FloorPlanBuilder:
                         self.col,
                         self.root,
                     )
+                    created_wall_objs.append(obj)
+
+        # Build seamless corner blocks for all 90-degree L-corners
+        for c_idx, cb in enumerate(self._detect_wall_corners(), start=1):
+            obj_cb = create_prism_from_quad(
+                f"{self.name}_WallCornerBlock_{c_idx}",
+                cb["corners"],
+                0.0,
+                cb["z_top"],
+                self.mats["wall"],
+                self.col,
+                self.root,
+            )
+            created_wall_objs.append(obj_cb)
+
+        # Unify all wall objects of this floor into a single seamless mesh
+        # This completely removes internal outlines in Workbench blueprint mode
+        # and eliminates seam artifacts in Cycles rendering
+        if created_wall_objs:
+            self._unify_wall_mesh(created_wall_objs)
+
+    def _unify_wall_mesh(self, wall_objs: List[bpy.types.Object]):
+        """
+        Merges individual wall segments, lintels, sills, and corner blocks into
+        a single unified mesh object per floor, and removes coplanar doubles.
+        """
+        if not wall_objs:
+            return
+
+        import bmesh
+        unified_mesh = bpy.data.meshes.new(f"{self.name}_Walls_Mesh")
+        bm = bmesh.new()
+
+        for obj in wall_objs:
+            if obj.data and len(obj.data.vertices) > 0:
+                bm_temp = bmesh.new()
+                bm_temp.from_mesh(obj.data)
+                # Apply local translation if any (prisms are created in local/world cm coords)
+                for v in bm_temp.verts:
+                    bm.verts.new(v.co)
+                bm.verts.ensure_lookup_table()
+                offset = len(bm.verts) - len(bm_temp.verts)
+                for f in bm_temp.faces:
+                    try:
+                        bm.faces.new([bm.verts[v.index + offset] for v in f.verts])
+                    except ValueError:
+                        pass
+                bm_temp.free()
+
+        # Remove duplicate vertices at seams
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.001)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+
+        bm.to_mesh(unified_mesh)
+        bm.free()
+
+        # Create the unified object
+        unified_obj = bpy.data.objects.new(f"{self.name}_Walls", unified_mesh)
+        if self.mats.get("wall"):
+            unified_obj.data.materials.append(self.mats["wall"])
+        link_to_collection(unified_obj, self.col)
+        unified_obj.parent = self.root
+
+        # Clean up individual segment objects
+        for obj in wall_objs:
+            m = obj.data
+            bpy.data.objects.remove(obj, do_unlink=True)
+            if m and m.users == 0:
+                bpy.data.meshes.remove(m)
+
+    def _detect_wall_corners(self):
+        """Detects L-junctions where exactly two perpendicular walls meet at an endpoint."""
+        eps = {}
+        for i, w in enumerate(self.walls):
+            p1 = (round(w["x1"], 2), round(w["y1"], 2))
+            p2 = (round(w["x2"], 2), round(w["y2"], 2))
+            eps.setdefault(p1, []).append((i, "start"))
+            eps.setdefault(p2, []).append((i, "end"))
+
+        corner_blocks = []
+        for pt, conns in eps.items():
+            if len(conns) == 2:
+                w1 = self.walls[conns[0][0]]
+                w2 = self.walls[conns[1][0]]
+                dx1, dy1 = w1["x2"] - w1["x1"], w1["y2"] - w1["y1"]
+                dx2, dy2 = w2["x2"] - w2["x1"], w2["y2"] - w2["y1"]
+                L1, L2 = math.hypot(dx1, dy1), math.hypot(dx2, dy2)
+                if L1 > 0 and L2 > 0:
+                    dot = (dx1 * dx2 + dy1 * dy2) / (L1 * L2)
+                    if abs(dot) < 0.2:
+                        t1, t2 = w1["thickness"], w2["thickness"]
+                        hw1, hw2 = t1 * 0.5, t2 * 0.5
+                        cx, cy = pt
+                        corner_blocks.append({
+                            "pt": pt,
+                            "corners": [
+                                (cx - hw1, cy - hw2),
+                                (cx + hw1, cy - hw2),
+                                (cx + hw1, cy + hw2),
+                                (cx - hw1, cy + hw2),
+                            ],
+                            "z_top": w1.get("z_top", WALL_HEIGHT),
+                        })
+        return corner_blocks
 
     def _build_windows(self):
         """Builds all 3D window assemblies using White uPVC and double glazing."""
@@ -531,7 +714,15 @@ class FloorPlanBuilder:
                 self.root,
             )
 
-            # Edge segments for open perimeter
+            # Build continuous mitered polylines for connected open edges
+            open_set = set(t["open_edges"])
+            center_pt = (x + w * 0.5, y + h * 0.5)
+
+            c_sw = (x, y)
+            c_se = (x + w, y)
+            c_ne = (x + w, y + h)
+            c_nw = (x, y + h)
+
             edge_map = {
                 "S": (x, y, x + w, y),
                 "E": (x + w, y, x + w, y + h),
@@ -539,18 +730,52 @@ class FloorPlanBuilder:
                 "W": (x, y + h, x, y),
             }
 
-            for edge_key in t["open_edges"]:
-                ex1, ey1, ex2, ey2 = edge_map[edge_key]
-                create_terrace_parapet_and_coping(
-                    name_prefix=f"{self.name}_{t['name']}",
-                    edge_key=edge_key,
-                    x1=ex1, y1=ey1,
-                    x2=ex2, y2=ey2,
-                    wall_mat=self.mats["wall"],
-                    coping_mat=self.mats["terrace_coping"],
-                    col=self.col,
-                    parent=self.root,
+            if open_set == {"N", "E"}:
+                chain = [c_nw, c_ne, c_se]
+                create_mitered_terrace_parapet_and_coping(
+                    f"{self.name}_{t['name']}",
+                    chain,
+                    center_pt,
+                    self.mats["wall"],
+                    self.mats["terrace_coping"],
+                    self.col,
+                    self.root,
                 )
+            elif open_set == {"S", "E", "W"}:
+                chain = [c_nw, c_sw, c_se, c_ne]
+                create_mitered_terrace_parapet_and_coping(
+                    f"{self.name}_{t['name']}",
+                    chain,
+                    center_pt,
+                    self.mats["wall"],
+                    self.mats["terrace_coping"],
+                    self.col,
+                    self.root,
+                )
+            elif open_set == {"N", "W", "S"}:
+                chain = [c_ne, c_nw, c_sw, c_se]
+                create_mitered_terrace_parapet_and_coping(
+                    f"{self.name}_{t['name']}",
+                    chain,
+                    center_pt,
+                    self.mats["wall"],
+                    self.mats["terrace_coping"],
+                    self.col,
+                    self.root,
+                )
+            else:
+                for edge_key in t["open_edges"]:
+                    ex1, ey1, ex2, ey2 = edge_map[edge_key]
+                    create_terrace_parapet_and_coping(
+                        name_prefix=f"{self.name}_{t['name']}",
+                        edge_key=edge_key,
+                        x1=ex1, y1=ey1,
+                        x2=ex2, y2=ey2,
+                        wall_mat=self.mats["wall"],
+                        coping_mat=self.mats["terrace_coping"],
+                        col=self.col,
+                        parent=self.root,
+                    )
 
     def _build_stairs(self):
         """Builds all stairs with designated finish and optional curves/railings."""

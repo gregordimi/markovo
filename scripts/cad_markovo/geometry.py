@@ -66,8 +66,15 @@ def create_prism_from_quad(
     mesh = bpy.data.meshes.new(name)
     bm = bmesh.new()
 
-    z_b = z_bottom if isinstance(z_bottom, (list, tuple)) else [z_bottom] * 4
-    z_t = z_top if isinstance(z_top, (list, tuple)) else [z_top] * 4
+    if isinstance(z_bottom, (list, tuple)):
+        z_b = [z_bottom[0], z_bottom[1], z_bottom[1], z_bottom[0]] if len(z_bottom) == 2 else list(z_bottom)[:4]
+    else:
+        z_b = [float(z_bottom)] * 4
+
+    if isinstance(z_top, (list, tuple)):
+        z_t = [z_top[0], z_top[1], z_top[1], z_top[0]] if len(z_top) == 2 else list(z_top)[:4]
+    else:
+        z_t = [float(z_top)] * 4
 
     verts_btm = [bm.verts.new((x * CM, y * CM, z_b[i])) for i, (x, y) in enumerate(corners_2d)]
     verts_top = [bm.verts.new((x * CM, y * CM, z_t[i])) for i, (x, y) in enumerate(corners_2d)]
@@ -586,6 +593,102 @@ def create_door_3d(
     link_to_collection(arc_obj, col)
     if parent:
         arc_obj.parent = parent
+
+
+def miter_perpendicular_chain(
+    chain_pts: List[Tuple[float, float]],
+    center_pt: Tuple[float, float],
+    thickness: float,
+) -> List[List[Tuple[float, float]]]:
+    """
+    Computes exact 4-corner quads for each segment of a polyline with 45-degree mitered corners.
+    Each segment quad is [outer1, outer2, inner2, inner1].
+    Normals are oriented outward relative to center_pt.
+    """
+    hw = thickness * 0.5
+    n = len(chain_pts)
+    cx, cy = center_pt
+    normals = []
+
+    for i in range(n - 1):
+        p1, p2 = chain_pts[i], chain_pts[i + 1]
+        dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+        L = math.hypot(dx, dy)
+        if L < 1e-4:
+            normals.append((0.0, 1.0))
+            continue
+        ux, uy = dx / L, dy / L
+        nx, ny = -uy, ux
+        mid = (0.5 * (p1[0] + p2[0]), 0.5 * (p1[1] + p2[1]))
+        d_pos = math.hypot(mid[0] + nx - cx, mid[1] + ny - cy)
+        d_neg = math.hypot(mid[0] - nx - cx, mid[1] - ny - cy)
+        if d_pos < d_neg:
+            nx, ny = -nx, -ny
+        normals.append((round(nx, 4), round(ny, 4)))
+
+    quads = []
+    for i in range(n - 1):
+        p1, p2 = chain_pts[i], chain_pts[i + 1]
+        n_cur = normals[i]
+
+        # Start of segment
+        if i == 0:
+            o1 = (p1[0] + n_cur[0] * hw, p1[1] + n_cur[1] * hw)
+            i1 = (p1[0] - n_cur[0] * hw, p1[1] - n_cur[1] * hw)
+        else:
+            n_prev = normals[i - 1]
+            o1 = (p1[0] + (n_prev[0] + n_cur[0]) * hw, p1[1] + (n_prev[1] + n_cur[1]) * hw)
+            i1 = (p1[0] - (n_prev[0] + n_cur[0]) * hw, p1[1] - (n_prev[1] + n_cur[1]) * hw)
+
+        # End of segment
+        if i == n - 2:
+            o2 = (p2[0] + n_cur[0] * hw, p2[1] + n_cur[1] * hw)
+            i2 = (p2[0] - n_cur[0] * hw, p2[1] - n_cur[1] * hw)
+        else:
+            n_next = normals[i + 1]
+            o2 = (p2[0] + (n_cur[0] + n_next[0]) * hw, p2[1] + (n_cur[1] + n_next[1]) * hw)
+            i2 = (p2[0] - (n_cur[0] + n_next[0]) * hw, p2[1] - (n_cur[1] + n_next[1]) * hw)
+
+        quads.append([o1, o2, i2, i1])
+    return quads
+
+
+def create_mitered_terrace_parapet_and_coping(
+    name_prefix: str,
+    chain_pts: List[Tuple[float, float]],
+    center_pt: Tuple[float, float],
+    wall_mat: bpy.types.Material,
+    coping_mat: bpy.types.Material,
+    col: bpy.types.Collection,
+    parent: bpy.types.Object = None,
+):
+    """
+    Constructs solid masonry terrace parapet walls and overhanging stone coping
+    using continuous polylines with authentic 45-degree mitered corners.
+    Eliminates stepped notches and gaps at all corners.
+    """
+    parapet_quads = miter_perpendicular_chain(chain_pts, center_pt, TERRACE_WALL_THICKNESS)
+    coping_quads = miter_perpendicular_chain(chain_pts, center_pt, TERRACE_COPING_WIDTH)
+
+    for idx, (p_quad, c_quad) in enumerate(zip(parapet_quads, coping_quads), start=1):
+        create_prism_from_quad(
+            f"{name_prefix}_MiteredParapet_{idx}",
+            p_quad,
+            0.0,
+            TERRACE_PARAPET_HEIGHT,
+            wall_mat,
+            col,
+            parent,
+        )
+        create_prism_from_quad(
+            f"{name_prefix}_MiteredCoping_{idx}",
+            c_quad,
+            TERRACE_PARAPET_HEIGHT,
+            TERRACE_TOTAL_HEIGHT,
+            coping_mat,
+            col,
+            parent,
+        )
 
 
 def create_terrace_parapet_and_coping(
