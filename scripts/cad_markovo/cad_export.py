@@ -110,7 +110,23 @@ def export_to_dxf(floor_builders: List[FloorPlanBuilder], filepath: str):
             t_poly = [(tx, ty), (tx + tw, ty), (tx + tw, ty + th), (tx, ty + th)]
             msp.add_lwpolyline(t_poly, close=True, dxfattribs={"layer": "A-BALC"})
 
-        # 6. Dimensions
+        # 6. Kitchen Runs
+        from .config import KITCHEN_CARCASS_DEPTH
+        for run in b.kitchen_runs:
+            rx, ry = run["origin"][0] + ox, run["origin"][1] + oy
+            ax, ay = run["along"]
+            nx, ny = run["out"]
+            s = 0.0
+            for u in run["units"]:
+                uw = u["width"]
+                c1 = (rx + ax * s, ry + ay * s)
+                c2 = (rx + ax * (s + uw), ry + ay * (s + uw))
+                c3 = (c2[0] + nx * KITCHEN_CARCASS_DEPTH, c2[1] + ny * KITCHEN_CARCASS_DEPTH)
+                c4 = (c1[0] + nx * KITCHEN_CARCASS_DEPTH, c1[1] + ny * KITCHEN_CARCASS_DEPTH)
+                msp.add_lwpolyline([c1, c2, c3, c4], close=True, dxfattribs={"layer": "A-KITCH"})
+                s += uw
+
+        # 7. Dimensions
         for d in b.dimensions:
             p1 = (d["p1"][0] + ox, d["p1"][1] + oy)
             p2 = (d["p2"][0] + ox, d["p2"][1] + oy)
@@ -309,7 +325,25 @@ def export_to_svg(
         r_px = d["radius"] * scale
         dwg.append(draw.Circle(hx, hy, 3.0, fill=door_col))
 
-    # 6. Dimensions
+    # 6. Kitchen Runs
+    from .config import KITCHEN_CARCASS_DEPTH
+    kitch_stroke = "#2ECC71" if style == "blueprint" else "#27AE60"
+    for run in b.kitchen_runs:
+        rx, ry = run["origin"]
+        ax, ay = run["along"]
+        nx, ny = run["out"]
+        s = 0.0
+        for u in run["units"]:
+            uw = u["width"]
+            c1 = to_svg(rx + ax * s, ry + ay * s)
+            c2 = to_svg(rx + ax * (s + uw), ry + ay * (s + uw))
+            c3 = to_svg(rx + ax * (s + uw) + nx * KITCHEN_CARCASS_DEPTH, ry + ay * (s + uw) + ny * KITCHEN_CARCASS_DEPTH)
+            c4 = to_svg(rx + ax * s + nx * KITCHEN_CARCASS_DEPTH, ry + ay * s + ny * KITCHEN_CARCASS_DEPTH)
+            flat = [coord for pt in [c1, c2, c3, c4] for coord in pt]
+            dwg.append(draw.Lines(*flat, close=True, fill=wall_fill, fill_opacity=0.5, stroke=kitch_stroke, stroke_width=1.5))
+            s += uw
+
+    # 7. Dimensions
     for d in b.dimensions:
         p1 = d["p1"]
         p2 = d["p2"]

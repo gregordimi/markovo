@@ -30,12 +30,15 @@ markovo/
 ├── renders/                                 # Rendered CAD and perspective images
 └── scripts/
     ├── blender_floor_plans.py               # Main CLI & Blender GUI orchestrator
+    ├── furniture/                           # Isolated room furniture modules
+    │   ├── __init__.py
+    │   └── kitchen.py                       # Self-contained kitchen joinery, appliances & studio runner
     └── cad_markovo/                         # Core Python package
         ├── __init__.py                      # Package exports
         ├── config.py                        # Units, architectural heights, settings
         ├── materials.py                     # Procedural & PBR material library
         ├── geometry.py                      # 3D CAD mesh primitives & fixtures
-        ├── kitchen.py                       # Kitchen joinery runs (carcasses, fronts, worktop)
+        ├── kitchen.py                       # Kitchen joinery adapter (delegates to furniture.kitchen)
         ├── builder.py                       # FloorPlanBuilder engine (cutouts & slabs)
         ├── cad_export.py                    # AutoCAD DXF & 2D Vector SVG blueprint exporter
         ├── floor3.py                        # Floor 3 (Main Level) declarative data
@@ -45,12 +48,13 @@ markovo/
 
 ### Module Responsibilities:
 
-| File | Primary Role |
+| File / Package | Primary Role |
 | :--- | :--- |
+| [`furniture/kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/kitchen.py) | Self-contained, isolated kitchen furniture module. Defines birch plywood carcasses with exposed edges, olive inset doors/drawers, recessed plinth, solid wood worktop, sink basin, swan-neck tap, induction hob, built-in oven, and tall fridge housing. Contains standalone studio lighting/camera runner for sub-second isolated development. |
 | [`config.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/config.py) | Defines `CM = 0.01` conversion factor, vertical levels (`WALL_HEIGHT`, `SLAB_THICK`, `DOOR_HEIGHT`, `WIN_SILL`, `WIN_TOP`, `TERRACE_PARAPET_HEIGHT`, `TERRACE_COPING_THICKNESS`), and layout flags (`STACK_FLOORS`). |
 | [`materials.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/materials.py) | Central material factory: procedural clay tiles, parallel light parquet, cement mosaic terrazzo, white uPVC, stone coping, and PBR shaders. |
 | [`geometry.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/geometry.py) | Low-level mesh geometry: `create_prism_from_quad`, `create_extruded_polygon`, `wall_quad`, uPVC windows, doors with swing arcs, stairs, solid terrace parapets, dimension strings, and shapely room area stamps. |
-| [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/kitchen.py) | Kitchen runs along a wall face: birch plywood carcasses with exposed edges, olive inset doors/drawers, recessed plinth, solid wood worktop sliced around the sink basin, hob, oven front, tall fridge housing. |
+| [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/kitchen.py) | Adapter re-exporting `build_kitchen` and `DEFAULT_KITCHEN_UNITS` from `furniture.kitchen` into `cad_markovo`. |
 | [`builder.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py) | [`FloorPlanBuilder`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py#L40) class: manages object collections, root empties, automated collinear wall opening cutouts, lintels, sills, dimensions, and room area stamps. |
 | [`cad_export.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/cad_export.py) | Full AutoCAD `.dxf` (R2018) exporter using `ezdxf` with standard CAD layers (`A-WALL`, `A-DOOR`, `A-GLAZ`, `A-DIMS`), and scalable 2D vector blueprint SVG exporter using `drawsvg`. |
 | [`floor3.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor3.py) | Declarative floor specification for Floor 3 (rooms, walls, openings, stairs, balconies, perimeter dimensions). |

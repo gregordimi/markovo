@@ -62,11 +62,15 @@ if str(SCRIPT_DIR) not in sys.path:
 # Import modular package
 import cad_markovo
 from cad_markovo import config, materials, geometry, kitchen, builder, floor3, floor4, scene, cad_export
+import furniture
+from furniture import kitchen as furniture_kitchen
 
 # Hot-reload all submodules when running iteratively inside Blender's Text Editor
 importlib.reload(config)
 importlib.reload(materials)
 importlib.reload(geometry)
+importlib.reload(furniture_kitchen)
+importlib.reload(furniture)
 importlib.reload(kitchen)
 importlib.reload(builder)
 importlib.reload(floor3)
@@ -96,7 +100,8 @@ CAMERA_ALIAS_MAP = {
     "cad": "Camera_Top_CAD",
     "top": "Camera_Top_CAD",
     "cad_top": "Camera_Top_CAD",
-    "kitchen": "Camera_Kitchen_Overview",
+    "kitchen": "Camera_Kitchen_Inside",
+    "kitchen_inside": "Camera_Kitchen_Inside",
     "kitchen_overview": "Camera_Kitchen_Overview",
     "kitchen_eye": "Camera_Kitchen_Eye",
     "bathroom": "Camera_Bathroom_Overview",
@@ -112,6 +117,7 @@ CAMERA_ALIAS_MAP = {
 ALL_CAMERAS = [
     "Camera_Perspective",
     "Camera_Top_CAD",
+    "Camera_Kitchen_Inside",
     "Camera_Kitchen_Overview",
     "Camera_Kitchen_Eye",
     "Camera_Bathroom_Overview",

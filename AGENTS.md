@@ -18,17 +18,21 @@ This file contains operating instructions for AI coding assistants working in th
 | **Render Targeted Room Views** | `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/blender_floor_plans.py -- --view kitchen,bathroom` |
 | **Render CAD Blueprint & Wireframe** | `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/blender_floor_plans.py -- --blueprint --wireframe` |
 | **Export AutoCAD DXF & Vector SVG** | `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/blender_floor_plans.py -- --dxf --svg` |
+| **Develop Kitchen Furniture in Isolation** | `/Applications/Blender.app/Contents/MacOS/Blender --python scripts/furniture/kitchen.py` |
+| **Render Isolated Kitchen Furniture** | `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/furniture/kitchen.py -- --render` |
 
 ---
 
 ## 2. Architecture Quick Reference
 
 - **Entry Point**: [`scripts/blender_floor_plans.py`](file:///Users/gdimitrov/projects/markovo/scripts/blender_floor_plans.py)
-- **Modular Package**: [`scripts/cad_markovo/`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo)
+- **Modular Furniture**: [`scripts/furniture/`](file:///Users/gdimitrov/projects/markovo/scripts/furniture)
+  - [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/furniture/kitchen.py): Single source of truth for kitchen cabinetry, inset fronts, and appliances. Runnable in isolation with a dedicated studio lighting & camera rig, or imported into the master plan via `build_kitchen`.
+- **Core CAD Package**: [`scripts/cad_markovo/`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo)
   - [`config.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/config.py): Units (`CM = 0.01`), vertical dimensions, layout flags.
   - [`materials.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/materials.py): Material shaders & factory (`create_materials()`).
   - [`geometry.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/geometry.py): 3D CAD primitives, windows, doors, stairs, terrace walls & coping, dimension strings, and shapely room stamps.
-  - [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/kitchen.py): Kitchen runs (birch plywood carcasses, olive inset fronts, wood worktop, sink, hob, tall fridge), declared via `FloorPlanBuilder.add_kitchen_run()`.
+  - [`kitchen.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/kitchen.py): Clean adapter forwarding to `furniture.kitchen`.
   - [`builder.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py): [`FloorPlanBuilder`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/builder.py#L40) class with automatic collinear lintel/sill cutouts, perimeter dimensions, and area stamps.
   - [`cad_export.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/cad_export.py): Authentic AutoCAD `.dxf` (R2018) export with CAD layers & scalable vector SVG blueprints.
   - [`floor3.py`](file:///Users/gdimitrov/projects/markovo/scripts/cad_markovo/floor3.py): Floor 3 (Main Level) specification.

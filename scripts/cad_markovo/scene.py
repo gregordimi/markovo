@@ -121,20 +121,29 @@ def setup_lighting_and_cameras(stack: bool = False):
     # --------------------------------------------------------------------------
     # 5. Room-Specific Architectural Cameras (Floor 3)
     # --------------------------------------------------------------------------
-    # Kitchen Axonometric Overview: high angle looking down into the L-kitchen joinery
+    # Kitchen Inside View: standing directly inside the kitchen looking towards the long wall run
     create_camera(
-        "Camera_Kitchen_Overview",
-        location=(3.2, 4.0, 4.5),
-        target=(1.6, 7.8, 0.9),
-        lens=28.0,
+        "Camera_Kitchen_Inside",
+        location=(2.5, 7.8, 1.55),
+        target=(0.075, 7.8, 0.95),
+        lens=20.0,
         col=env_col,
     )
 
-    # Kitchen Eye-Level: standing at the Living Room threshold looking across fronts and worktop
+    # Kitchen Overview: standing at the kitchen entrance looking North along the linear run
+    create_camera(
+        "Camera_Kitchen_Overview",
+        location=(2.2, 5.2, 1.65),
+        target=(0.35, 8.0, 0.95),
+        lens=22.0,
+        col=env_col,
+    )
+
+    # Kitchen Eye-Level: standing near the north window looking South along the worktop & tall fridge
     create_camera(
         "Camera_Kitchen_Eye",
-        location=(3.2, 6.2, 1.55),
-        target=(0.2, 7.2, 1.05),
+        location=(2.3, 9.8, 1.55),
+        target=(0.35, 7.2, 0.95),
         lens=22.0,
         col=env_col,
     )
