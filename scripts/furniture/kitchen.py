@@ -574,10 +574,12 @@ def setup_kitchen_studio(kitchen_root: bpy.types.Object):
     cam_data.lens = 28.0
     cam_data.sensor_width = 36.0
     cam_obj = bpy.data.objects.new("Kitchen_Studio_Camera", cam_data)
-    cam_obj.location = (2.6, 2.2, 1.45)
+    #cam_obj.location = (2.6, 2.2, 1.45)
 
     # Track target at the center of the kitchen run (hob & prep zone)
-    target = Vector((0.35, 2.2, 0.95))
+    #target = Vector((0.35, 2.2, 0.95))
+    cam_obj.location = (4.8, 2.2, 1.5)
+    target = Vector((0.3, 2.2, 1.05))
     direction = target - cam_obj.location
     cam_obj.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
     col.objects.link(cam_obj)
