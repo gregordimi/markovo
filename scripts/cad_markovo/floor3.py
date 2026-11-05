@@ -258,13 +258,25 @@ def build_floor_3(mats: Dict[str, bpy.types.Material], offset=(0.0, 0.0, 0.0)) -
     from furniture import living_room, bedroom, bathroom, utility
     living_room.build_living_room_furniture(f3.col, living_room.create_materials(), parent=f3.root)
     bedroom.build_bedroom_furniture(f3.col, bedroom.create_materials(), parent=f3.root)
-    bathroom.build_bathroom_furniture(f3.col, bathroom.create_materials(), parent=f3.root)
+    bathroom.build_bathroom_furniture(f3.col, bathroom.create_materials(), parent=f3.root, offset=(0.0, 2.90, 0.0))
     utility.build_utility_furniture(f3.col, utility.create_materials(), parent=f3.root)
+
+    # --------------------------------------------------------------------------
+    # 10b. Sanitary & Bathroom Fixtures (2D CAD Blueprints)
+    # --------------------------------------------------------------------------
+    f3.add_fixture("Bath_Shower_Tray", [(0, 290), (82, 290), (82, 372), (0, 372)], kind="bath", room="Bathroom")
+    f3.add_fixture("Bath_Vanity_Sink", [(184, 374), (230, 374), (230, 436), (184, 436)], kind="bath", room="Bathroom")
+    f3.add_fixture("Bath_Toilet_WC", [(45, 407), (99, 407), (99, 445), (45, 445)], kind="bath", room="Bathroom")
 
     # --------------------------------------------------------------------------
     # 11. Architectural Room Labels & Callouts
     # --------------------------------------------------------------------------
     f3.add_label("FLOOR 3 - MAIN LEVEL", 350, 1110, z=0.05, size=28.0)
+    f3.add_label("BATHROOM", 115, 370, size=16.0)
+    f3.add_label("UTILITY", 115, 500, size=14.0)
+    f3.add_label("KITCHEN", 175, 780, size=18.0)
+    f3.add_label("LIVING ROOM", 525, 710, size=20.0)
+    f3.add_label("BEDROOM", 538, 310, size=20.0)
     f3.add_label("BALCONY", 525, 980, size=18.0)
     f3.add_label("BALCONY", -60, 372, size=18.0, rotation_z=90.0)
     f3.add_label("BALCONY", 538, 60, size=18.0)

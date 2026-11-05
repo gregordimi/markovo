@@ -178,6 +178,8 @@ def build_floor_4(
     # 6. Architectural Room Labels & Callouts
     # --------------------------------------------------------------------------
     f4.add_label("ATTIC FLOOR 4 - UPPER LEVEL", 350, 1110, z=0.05, size=28.0)
+    f4.add_label("ATTIC OFFICE", 530, 310, size=20.0)
+    f4.add_label("ATTIC BEDROOM", 530, 750, size=20.0)
     f4.add_label("UTILITY ROOM", 100, 650, z=0.06, size=18.0, rotation_z=90.0)
     f4.add_label("BALCONY", 530, 980, size=18.0)
     f4.add_label("BALCONY", 530, 60, size=18.0)

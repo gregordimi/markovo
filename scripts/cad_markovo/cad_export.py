@@ -41,6 +41,7 @@ def export_to_dxf(floor_builders: List[FloorPlanBuilder], filepath: str):
         ("A-GLAZ", colors.CYAN, 25),
         ("A-FLOR", colors.GRAY, 13),
         ("A-KITCH", colors.GREEN, 25),
+        ("A-BATH", colors.CYAN, 25),
         ("A-BALC", colors.MAGENTA, 35),
         ("A-DIMS", colors.BLUE, 18),
         ("A-TEXT", colors.YELLOW, 18),
@@ -125,6 +126,11 @@ def export_to_dxf(floor_builders: List[FloorPlanBuilder], filepath: str):
                 c4 = (c1[0] + nx * KITCHEN_CARCASS_DEPTH, c1[1] + ny * KITCHEN_CARCASS_DEPTH)
                 msp.add_lwpolyline([c1, c2, c3, c4], close=True, dxfattribs={"layer": "A-KITCH"})
                 s += uw
+
+        # 6b. Sanitary & Bathroom Fixtures
+        for fix in getattr(b, "fixtures", []):
+            pts = [(x + ox, y + oy) for x, y in fix["poly"]]
+            msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": "A-BATH"})
 
         # 7. Dimensions
         for d in b.dimensions:
@@ -342,6 +348,14 @@ def export_to_svg(
             flat = [coord for pt in [c1, c2, c3, c4] for coord in pt]
             dwg.append(draw.Lines(*flat, close=True, fill=wall_fill, fill_opacity=0.5, stroke=kitch_stroke, stroke_width=1.5))
             s += uw
+
+    # 6b. Sanitary & Bathroom Fixtures
+    bath_stroke = "#00BCD4" if style == "blueprint" else "#00838F"
+    for fix in getattr(b, "fixtures", []):
+        pts_svg = [to_svg(x, y) for x, y in fix["poly"]]
+        if pts_svg:
+            flat = [coord for pt in pts_svg for coord in pt]
+            dwg.append(draw.Lines(*flat, close=True, fill=wall_fill, fill_opacity=0.4, stroke=bath_stroke, stroke_width=1.5))
 
     # 7. Dimensions
     for d in b.dimensions:

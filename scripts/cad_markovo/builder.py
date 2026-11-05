@@ -75,6 +75,7 @@ class FloorPlanBuilder:
         self.labels: List[dict] = []
         self.custom_prisms: List[dict] = []
         self.kitchen_runs: List[dict] = []
+        self.fixtures: List[dict] = []
         self.dimensions: List[dict] = []
         self.auto_room_stamps: bool = True
         self.dim_col = get_or_create_collection(f"{name}_Dimensions")
@@ -281,6 +282,21 @@ class FloorPlanBuilder:
             "z_bottom": z_bottom,
             "z_top": z_top,
             "mat_key": mat_key,
+        })
+
+    def add_fixture(
+        self,
+        name: str,
+        poly_2d: list,
+        kind: str = "bath",
+        room: str = None,
+    ):
+        """Adds a 2D architectural fixture boundary for CAD/SVG export."""
+        self.fixtures.append({
+            "name": name,
+            "poly": poly_2d,
+            "kind": kind,
+            "room": room,
         })
 
     def add_kitchen_run(
